@@ -74,5 +74,8 @@ tools/        the tools themselves, one self-contained .html each
 ## Notes
 
 - Tools run entirely client-side. Don't put secrets, API keys, or internal URLs in them.
+- Keep an eye on file size. A tool with a big demo asset baked in as base64 makes every
+  visitor download it. `nine-slice-repair-lab.html` is 7.5 MB for this reason. If that
+  becomes a habit, pull the asset out to `tools/<tool-name>/` and load it on demand.
 - **The site is public.** Anything pushed here is visible to anyone with the link.
 - The index sorts alphabetically by `name`. There is no ordering field on purpose.
