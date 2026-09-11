@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turbo Tool Kit</title>
+<meta name="description" content="Internal web tools at Turborilla.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128296;</text></svg>">
+<style>
+  :root{
+    --bg:#15181c;
+    --panel:#1d2228;
+    --panel-2:#242b33;
+    --panel-hi:#2b343d;
+    --line:#323b45;
+    --ink:#dfe6ed;
+    --ink-dim:#8b98a6;
+    --ink-faint:#67727e;
+    --accent:#5fd0c5;
+    --accent-ink:#0f1417;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 420px at 12% -8%, #1e2a2c 0%, transparent 62%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--ink);
+    font:15px/1.55 ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  a{color:inherit;text-decoration:none}
+
+  .wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+
+  /* header */
+  header{padding-block:44px 26px}
+  .brand{
+    display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+    font-size:30px;font-weight:650;letter-spacing:-.4px;margin:0;
+  }
+  .brand .name{white-space:nowrap}
+  .brand .rilla{color:var(--accent)}
+  .brand .count{
+    font-size:12px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--ink-faint);font-variant-numeric:tabular-nums;
+    border:1px solid var(--line);border-radius:999px;padding:3px 10px;
+    align-self:center;
+  }
+  .tagline{margin:8px 0 0;color:var(--ink-dim);max-width:62ch}
+
+  /* controls */
+  .controls{
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+    padding-block:20px 4px;
+  }
+  .search{position:relative;flex:1 1 280px;min-width:0}
+  .search svg{
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:16px;height:16px;stroke:var(--ink-faint);fill:none;stroke-width:2;pointer-events:none;
+  }
+  #q{
+    width:100%;font:inherit;color:var(--ink);
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:11px 40px 11px 36px;outline:none;
+    transition:border-color .15s,background .15s;
+  }
+  #q::placeholder{color:var(--ink-faint)}
+  #q:focus{border-color:var(--accent);background:var(--panel-2)}
+  .kbd{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    font:11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink-faint);
+    border:1px solid var(--line);border-radius:5px;padding:4px 6px;pointer-events:none;
+    transition:opacity .15s;
+  }
+  #q:focus ~ .kbd{opacity:0}
+
+  .tags{display:flex;gap:8px;flex-wrap:wrap}
+  .tag{
+    font:inherit;font-size:13px;color:var(--ink-dim);cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:7px 14px;transition:all .15s;white-space:nowrap;
+  }
+  .tag:hover{color:var(--ink);border-color:var(--panel-hi);background:var(--panel-2)}
+  .tag[aria-pressed="true"]{
+    background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;
+  }
+
+  /* grid */
+  .grid{
+    display:grid;gap:14px;padding-block:22px 60px;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  }
+  .card{
+    display:flex;flex-direction:column;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px 18px 16px;
+    transition:border-color .15s,transform .15s,background .15s;
+  }
+  .card:hover{border-color:var(--accent);background:var(--panel-2);transform:translateY(-2px)}
+  .card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .card-top{display:flex;align-items:flex-start;gap:12px}
+  .icon{
+    flex:none;width:40px;height:40px;border-radius:9px;
+    background:var(--panel-2);border:1px solid var(--line);
+    display:grid;place-items:center;font-size:20px;line-height:1;
+  }
+  .card:hover .icon{background:var(--panel-hi)}
+  .card h2{margin:0;font-size:16px;font-weight:620;letter-spacing:-.2px;padding-top:6px}
+  .card p{margin:0;color:var(--ink-dim);font-size:13.5px;line-height:1.5;flex:1}
+  .meta{
+    display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+    margin-top:2px;padding-top:12px;border-top:1px solid var(--line);
+  }
+  .chip{
+    font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);
+    background:var(--panel-2);border-radius:4px;padding:3px 7px;
+  }
+  .author{margin-left:auto;font-size:11.5px;color:var(--ink-faint)}
+
+  /* empty state */
+  .empty{
+    grid-column:1/-1;text-align:center;color:var(--ink-dim);
+    border:1px dashed var(--line);border-radius:14px;padding:56px 24px;
+  }
+  .empty strong{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+  .empty code{
+    font:13px ui-monospace,SFMono-Regular,Menlo,monospace;
+    background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:2px 6px;
+  }
+
+  /* footer */
+  footer{
+    border-top:1px solid var(--line);padding-block:20px 40px;
+    color:var(--ink-faint);font-size:13px;
+    display:flex;gap:14px;flex-wrap:wrap;align-items:center;
+  }
+  footer a{color:var(--ink-dim);border-bottom:1px solid transparent}
+  footer a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+  @media (max-width:520px){
+    header{padding-block:30px 18px}
+    .brand{font-size:24px}
+    .grid{grid-template-columns:1fr}
+    .kbd{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1 class="brand"><span class="name">Turbo<span class="rilla">rilla</span> Tool Kit</span> <span class="count" id="count"></span></h1>
+    <p class="tagline">Single-file web tools for the team. No install, no login, nothing leaves your browser.</p>
+  </header>
+
+  <div class="controls">
+    <label class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search tools..." autocomplete="off" aria-label="Search tools">
+      <span class="kbd">/</span>
+    </label>
+    <div class="tags" id="tags"></div>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <footer>
+    <span>Turborilla internal tools</span>
+    <a href="https://github.com/turborilla/turbo-tool-kit">Repo</a>
+    <a href="https://github.com/turborilla/turbo-tool-kit#adding-a-tool">Add a tool</a>
+  </footer>
+</div>
+
+<script src="tools.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var TOOLS = (window.TOOLS || []).slice().sort(function(a, b){
+    return String(a.name).localeCompare(String(b.name));
+  });
+
+  var grid  = document.getElementById("grid");
+  var tagEl = document.getElementById("tags");
+  var q     = document.getElementById("q");
+  var count = document.getElementById("count");
+
+  var activeTag = "";
+
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  /* tag filter bar */
+  var allTags = [];
+  TOOLS.forEach(function(t){
+    (t.tags || []).forEach(function(tag){
+      if (allTags.indexOf(tag) === -1) allTags.push(tag);
+    });
+  });
+  allTags.sort();
+
+  allTags.forEach(function(tag){
+    var b = document.createElement("button");
+    b.className = "tag";
+    b.type = "button";
+    b.textContent = tag;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function(){
+      activeTag = (activeTag === tag) ? "" : tag;
+      Array.prototype.forEach.call(tagEl.children, function(el){
+        el.setAttribute("aria-pressed", String(el.textContent === activeTag));
+      });
+      render();
+    });
+    tagEl.appendChild(b);
+  });
+
+  /* rendering */
+  function matches(t, needle){
+    if (activeTag && (t.tags || []).indexOf(activeTag) === -1) return false;
+    if (!needle) return true;
+    var hay = [t.name, t.description, t.author].concat(t.tags || []).join(" ").toLowerCase();
+    return needle.split(/\s+/).every(function(word){ return hay.indexOf(word) !== -1; });
+  }
+
+  function card(t){
+    var tags = (t.tags || []).map(function(x){
+      return '<span class="chip">' + esc(x) + '</span>';
+    }).join("");
+    var author = t.author ? '<span class="author">' + esc(t.author) + '</span>' : "";
+    var meta = (tags || author) ? '<div class="meta">' + tags + author + '</div>' : "";
+
+    return '<a class="card" href="tools/' + encodeURI(String(t.file)) + '">' +
+             '<div class="card-top">' +
+               '<div class="icon" aria-hidden="true">' + esc(t.icon || "🔧") + '</div>' +
+               '<h2>' + esc(t.name) + '</h2>' +
+             '</div>' +
+             '<p>' + esc(t.description) + '</p>' +
+             meta +
+           '</a>';
+  }
+
+  function render(){
+    var needle = q.value.trim().toLowerCase();
+    var shown = TOOLS.filter(function(t){ return matches(t, needle); });
+
+    count.textContent = TOOLS.length + (TOOLS.length === 1 ? " tool" : " tools");
+
+    if (!TOOLS.length){
+      grid.innerHTML = '<div class="empty"><strong>No tools yet</strong>' +
+        'Drop an .html file into <code>tools/</code> and add an entry to <code>tools.js</code>.</div>';
+      return;
+    }
+    if (!shown.length){
+      grid.innerHTML = '<div class="empty"><strong>Nothing matches</strong>' +
+        'Try a different search, or clear the tag filter.</div>';
+      return;
+    }
+    grid.innerHTML = shown.map(card).join("");
+  }
+
+  /* input handling */
+  q.addEventListener("input", render);
+  q.addEventListener("keydown", function(e){
+    if (e.key === "Escape"){ q.value = ""; render(); }
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "/" && document.activeElement !== q){
+      e.preventDefault();
+      q.focus();
+    }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>

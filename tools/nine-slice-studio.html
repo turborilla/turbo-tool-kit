@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nine Slice Studio</title>
+<style>
+  :root{
+    --bg:#15181c;
+    --panel:#1d2228;
+    --panel-2:#242b33;
+    --line:#323b45;
+    --ink:#dfe6ed;
+    --ink-dim:#8b98a6;
+    --accent:#5fd0c5;
+    --accent-ink:#0f1417;
+    --warn:#e0a458;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font:13px/1.45 ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;flex-direction:column;overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  header{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel);
+  }
+  .brand{font-weight:600;letter-spacing:.2px;margin-right:2px}
+  .brand span{color:var(--accent)}
+  .dims{color:var(--ink-dim);font-variant-numeric:tabular-nums}
+
+  button, .filebtn{
+    font:inherit;color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:5px;padding:4px 9px;cursor:pointer;
+  }
+  button:hover,.filebtn:hover{border-color:#4a5763}
+  button:focus-visible,.filebtn:focus-visible,input:focus-visible,select:focus-visible{
+    outline:2px solid var(--accent);outline-offset:1px
+  }
+  button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  button:disabled{opacity:.4;cursor:default}
+  .filebtn{display:inline-block}
+  .filebtn input{display:none}
+
+  main{flex:1;display:flex;min-height:0}
+  .pane{display:flex;flex-direction:column;min-width:0;min-height:0;flex:1}
+  .pane + .divider + .pane{flex:1}
+  .divider{width:6px;cursor:col-resize;background:var(--line);flex:0 0 auto}
+  .divider:hover{background:var(--accent)}
+
+  .bar{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:6px 10px;border-bottom:1px solid var(--line);background:var(--panel);
+    min-height:36px;
+  }
+  .bar .title{font-weight:600}
+  .bar .sep{width:1px;height:18px;background:var(--line)}
+  label{display:inline-flex;align-items:center;gap:5px;color:var(--ink-dim);white-space:nowrap}
+  label b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;min-width:2.4em;text-align:right}
+  input[type=range]{width:88px;accent-color:var(--accent)}
+  input[type=number]{
+    width:62px;font:inherit;color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:4px;padding:3px 5px;
+  }
+  input[type=color]{
+    width:28px;height:24px;padding:0;background:none;border:1px solid var(--line);border-radius:4px;cursor:pointer
+  }
+  input[type=checkbox]{accent-color:var(--accent)}
+
+  .stage{flex:1;position:relative;min-height:0;overflow:hidden;background:
+    repeating-conic-gradient(#101316 0% 25%, #191d22 0% 50%) 50%/18px 18px}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  #editStage{cursor:crosshair}
+  #editStage.panning{cursor:grabbing}
+  #previewStage{cursor:grab}
+  #previewStage.panning{cursor:grabbing}
+
+  .hint{
+    position:absolute;left:10px;bottom:8px;z-index:2;pointer-events:none;
+    color:var(--ink-dim);background:rgba(21,24,28,.82);border:1px solid var(--line);
+    border-radius:5px;padding:4px 8px;font-variant-numeric:tabular-nums;
+  }
+  .drop{
+    position:absolute;inset:0;z-index:3;display:none;place-items:center;
+    background:rgba(21,24,28,.9);border:2px dashed var(--accent);color:var(--accent)
+  }
+  .drop.show{display:grid}
+  .empty{
+    position:absolute;inset:0;z-index:2;display:grid;place-items:center;text-align:center;
+    color:var(--ink-dim);padding:20px;line-height:1.7
+  }
+  .empty.hide{display:none}
+  .empty kbd{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:4px;
+    padding:1px 5px;color:var(--ink);font:inherit
+  }
+  @media (max-width:860px){
+    main{flex-direction:column}
+    .divider{width:auto;height:6px;cursor:row-resize}
+  }
+
+  .pane:first-child{flex:1.7}
+  .badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:4px;padding:2px 5px;color:var(--ink-dim)}
+  .badge.live{color:var(--accent);border-color:#36605e}
+  .toolrow{gap:8px}
+  .scope-on{color:var(--accent)}
+  .control-muted{opacity:.45}
+  .subbar{background:#191e24;min-height:34px;font-size:12px}
+  .subbar input[type=range]{width:74px}
+  .subbar .note{color:var(--ink-dim)}
+  #pasteControls{border-bottom:1px solid var(--line)}
+  #pasteControls.active{background:#213430}
+  #pasteStatus{color:var(--accent)}
+  #editStage{cursor:crosshair}
+  #editStage.moving{cursor:move}
+  #previewStage{cursor:grab}
+  .hint{max-width:calc(100% - 20px);font-size:11px}
+  .empty{pointer-events:none}
+  .empty strong{font-size:18px;color:var(--ink);font-weight:500}
+  .empty .lead{max-width:430px}
+  .empty .keys{font-size:12px;margin-top:12px}
+  .source-note{color:var(--ink-dim);font-size:12px;padding:5px 10px;border-bottom:1px solid var(--line);background:#191e24}
+  #status{padding:5px 12px;border-top:1px solid var(--line);background:var(--panel);color:var(--ink-dim);font-size:11px;min-height:27px}
+  #status.notice{color:var(--accent)}
+  .sep{width:1px;height:18px;background:var(--line)}
+  details{position:relative;margin-left:auto}
+  summary{cursor:pointer;color:var(--ink-dim)}
+  .help{position:absolute;right:0;top:28px;width:370px;max-width:90vw;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:7px;box-shadow:0 8px 30px #0008;z-index:10;line-height:1.65}
+  .help p{margin:0 0 10px}.help p:last-child{margin-bottom:0}
+  @media(max-width:860px){.pane:first-child{flex:1.7}.bar{gap:6px;padding:5px 8px}.help{position:fixed;top:70px;right:10px}.source-note{display:none}}
+  @media(max-width:600px){.pane:first-child{flex:3}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Nine <span>Slice</span> Studio</div>
+  <label class="filebtn">Open image<input id="fileIn" type="file" accept="image/*"></label>
+  <button id="newBtn">New image</button>
+  <button id="saveBtn" disabled title="Export the edited source image at its original dimensions">Save source PNG</button>
+  <div class="sep"></div>
+  <button id="undoBtn" disabled title="Ctrl/Cmd+Z">Undo</button>
+  <button id="redoBtn" disabled title="Ctrl/Cmd+Shift+Z">Redo</button>
+  <div class="sep"></div>
+  <label>Left <input id="mL" type="number" min="0" step="1" value="128"></label>
+  <label>Top <input id="mT" type="number" min="0" step="1" value="128"></label>
+  <label>Right <input id="mR" type="number" min="0" step="1" value="128"></label>
+  <label>Bottom <input id="mB" type="number" min="0" step="1" value="128"></label>
+  <div class="dims" id="dims">no image</div>
+  <details id="helpDetails"><summary>Help / shortcuts</summary><div class="help">
+    <p><strong>Edit only in the nine-slice view.</strong> All repeated copies share the same source pixels. The source view is read-only and updates as you work. The opened file is never overwritten.</p>
+    <p><strong>Brush:</strong> B. <strong>Clone:</strong> C, then Alt-click a source point in the nine-slice view. E toggles erasing. Alt-click with the brush to pick a colour. [ and ] change brush size.</p>
+    <p><strong>Pointer tile only (T):</strong> clips each brush, clone or eraser dab to the tile under its centre, even when the brush is larger than that tile. The active tile is outlined; it follows the pointer across seams. No paint wraps around the tile edge. This temporarily overrides Wrap in slice. Repeated copies of the same source slice still update together. Selections and pastes are unaffected.</p>
+    <p><strong>Select:</strong> M, then drag a rectangle in the nine-slice view. Ctrl/Cmd+C copies, X cuts, V pastes. The app has a local image clipboard, so no clipboard permissions are required.</p>
+    <p><strong>Paste:</strong> drag the outlined patch, or use arrow keys (Shift for 10 pixels). Lower paste hardness softens its edges; 100% keeps hard edges. Opacity adjusts the whole patch. Enter or Apply commits; Escape or Cancel discards it. Both views show the actual mapped result before you apply.</p>
+    <p><strong>Linked pixels:</strong> a paste spanning repeated tiles can reach the same source pixel more than once. The strongest alpha is used once (later pixels win equal-alpha ties), so aliases do not multiply opacity.</p>
+    <p><strong>Navigation:</strong> wheel to zoom, Space+drag or middle drag to pan. Drag anywhere in the source view to pan. 1 fits the editor; 2 fits the source. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes. Escape clears a selection.</p>
+  </div></details>
+</header>
+<main>
+  <section class="pane" id="paneEdit">
+    <div class="bar">
+      <span class="title">Nine-slice editor</span><span class="badge live">Edit here</span>
+      <label><input id="pFilter" type="checkbox" checked> Bilinear</label>
+      <label><input id="pSeams" type="checkbox" checked> Seams</label>
+      <label title="Editor background (not exported)">Background <input id="pBg" type="color" value="#2c333b"></label>
+      <button id="fitEdit">Fit</button><button id="edit100">100%</button>
+    </div>
+    <div class="bar toolrow">
+      <button id="toolBrush" class="on" title="Brush (B)">Brush</button>
+      <button id="toolClone" title="Clone (C); Alt-click in the editor to set a source">Clone</button>
+      <button id="toolSelect" title="Rectangle selection (M)">Select</button>
+      <div class="sep"></div>
+      <label>Size <input id="size" type="range" min="1" max="600" value="48"><b id="sizeV">48</b></label>
+      <label>Hardness <input id="hard" type="range" min="0" max="100" value="70"><b id="hardV">70%</b></label>
+      <label>Opacity <input id="opac" type="range" min="1" max="100" value="100"><b id="opacV">100%</b></label>
+      <label id="colorWrap">Colour <input id="color" type="color" value="#8ab4c8"></label>
+      <label><input id="erase" type="checkbox"> Erase</label>
+      <label id="tileOnlyWrap" title="Brush / clone / eraser: clip each dab to the preview tile under its centre, without edge wrapping. Follows the pointer between tiles. Linked copies still update. Shortcut: T."><input id="tileOnly" type="checkbox"> Pointer tile only</label>
+      <label id="wrapLabel" title="Brush / clone only: lock a stroke to its starting slice, wrapping within repeating rows and columns. Turn off to paint across different slices. Paused while Pointer tile only is on."><input id="wrap" type="checkbox" checked> Wrap in slice</label>
+    </div>
+    <div class="bar subbar" id="pasteControls">
+      <button id="copyBtn" disabled title="Copy the selected preview pixels (Ctrl/Cmd+C)">Copy</button>
+      <button id="cutBtn" disabled title="Copy and clear the selection (Ctrl/Cmd+X)">Cut</button>
+      <button id="pasteBtn" disabled title="Paste from the app clipboard (Ctrl/Cmd+V)">Paste</button>
+      <div class="sep"></div>
+      <label title="100%: hard edge. Lower values feather the edges inward, preserving the copied image alpha.">Paste hardness <input id="pasteHard" type="range" min="0" max="100" value="70"><b id="pasteHardV">70%</b></label>
+      <label>Opacity <input id="pasteOpacity" type="range" min="0" max="100" value="100"><b id="pasteOpacityV">100%</b></label>
+      <button id="applyPaste" disabled>Apply</button><button id="cancelPaste" disabled>Cancel</button>
+      <span id="pasteStatus" class="note">Select a rectangle to copy</span>
+    </div>
+    <div class="stage" id="editStage" aria-label="Editable nine-slice preview">
+      <canvas id="editCv"></canvas>
+      <div class="empty" id="emptyState"><div class="lead">
+        <strong>Paint the nine-slice preview.</strong><br>
+        Open an image or drop one here. Its source stays read-only.<br>
+        Repeated tiles update together as you paint or paste.
+        <div class="keys"><kbd>M</kbd> selects &middot; <kbd>Ctrl/Cmd+C</kbd> copies &middot; <kbd>Ctrl/Cmd+V</kbd> pastes<br>Wheel zooms &middot; <kbd>Space</kbd> + drag pans</div>
+      </div></div>
+      <div class="drop" id="dropZone">Drop image to open</div>
+      <div class="hint" id="editHint">Editable preview</div>
+    </div>
+  </section>
+  <div class="divider" id="divider"></div>
+  <section class="pane" id="panePrev">
+    <div class="bar">
+      <span class="title">Source image</span><span class="badge">Read-only</span>
+      <label><input id="guides" type="checkbox" checked> Guides</label>
+      <button id="fitPrev">Fit</button><button id="prev100">100%</button>
+    </div>
+    <div class="source-note">Live result at original dimensions. Paint and paste in the nine-slice editor.</div>
+    <div class="stage" id="previewStage" aria-label="Read-only source image preview">
+      <canvas id="prevCv"></canvas>
+      <div class="hint" id="prevHint">Read-only &middot; drag to pan</div>
+    </div>
+  </section>
+</main>
+<footer id="status" role="status" aria-live="polite">Open an image to begin. All image editing happens in the nine-slice editor.</footer>
+
+<script>
+"use strict";
+
+/*
+ * art is the committed source artwork. No source-view handler edits it.
+ * Input, selections, and clone offsets live in NINE-SLICE PREVIEW coordinates.
+ * Brush dabs and paste patches are inverse-mapped into shared source pixels.
+ * Both views draw the same live composite, including uncommitted paste/erase.
+ * No external libraries, network access, or clipboard permissions are needed.
+ */
+const $ = id => document.getElementById(id);
+const S = {
+  w:0, h:0, m:{l:128,t:128,r:128,b:128}, loaded:false,
+  tool:"brush", brush:{size:48,hardness:.7,opacity:1,color:"#8ab4c8",erase:false},
+  wrap:true, tileOnly:false, guides:true, clone:{src:null,off:null},
+  view:{z:1,ox:0,oy:0}, pview:{z:1,ox:0,oy:0},
+  stroke:null, selection:null, clipboard:null, paste:null,
+  pasteHardness:.7, pasteOpacity:1, undo:[], redo:[], hover:null
+};
+const MAX_UNDO = 30, HISTORY_BYTES = 96 * 1024 * 1024;
+const MAX_SIDE = 8192, MAX_PIXELS = 32 * 1024 * 1024;
+const editStage = $("editStage"), editCv = $("editCv"), eCtx = editCv.getContext("2d");
+const prevStage = $("previewStage"), prevCv = $("prevCv"), pCtx = prevCv.getContext("2d");
+const mLi=$("mL"), mTi=$("mT"), mRi=$("mR"), mBi=$("mB");
+const sizeIn=$("size"), hardIn=$("hard"), opacIn=$("opac"), colorIn=$("color");
+const eraseIn=$("erase"), wrapIn=$("wrap"), tileOnlyIn=$("tileOnly"), guidesIn=$("guides");
+const pFilter=$("pFilter"), pSeams=$("pSeams"), pBg=$("pBg");
+const editHint=$("editHint"), prevHint=$("prevHint"), undoBtn=$("undoBtn"), redoBtn=$("redoBtn");
+let art, artCtx, pre, preCtx, strokeCv, strokeCtx, scratchCv;
+let dpr=Math.min(2,window.devicePixelRatio||1), rafPending=false;
+let spaceDown=false, gesture=null, sourcePan=null, brushCache=null;
+let flashTimer=null, loadSequence=0;
+function mkCanvas(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return c;}
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const mod=(v,n)=>((v%n)+n)%n;
+function cw(){return S.w-S.m.l-S.m.r;}
+function ch(){return S.h-S.m.t-S.m.b;}
+function previewNativeSize(){return {w:S.w+cw(),h:S.h+ch()};}
+function clampMargins(){
+  const m=S.m;
+  m.l=clamp(Math.trunc(m.l)||0,0,Math.max(0,S.w-1));
+  m.t=clamp(Math.trunc(m.t)||0,0,Math.max(0,S.h-1));
+  m.r=clamp(Math.trunc(m.r)||0,0,Math.max(0,S.w-m.l-1));
+  m.b=clamp(Math.trunc(m.b)||0,0,Math.max(0,S.h-m.t-1));
+}
+function syncMarginInputs(){mLi.value=S.m.l;mTi.value=S.m.t;mRi.value=S.m.r;mBi.value=S.m.b;}
+
+/* Half-open 4x4 preview cells: L,C,C,R by T,C,C,B. Corners appear once. */
+function previewCells(){
+  const {l,t,r,b}=S.m, W=cw(),H=ch();
+  const cols=[{d:0,s:0,n:l,c:0},{d:l,s:l,n:W,c:1},{d:l+W,s:l,n:W,c:1},{d:l+W*2,s:S.w-r,n:r,c:2}];
+  const rows=[{d:0,s:0,n:t,c:0},{d:t,s:t,n:H,c:1},{d:t+H,s:t,n:H,c:1},{d:t+H*2,s:S.h-b,n:b,c:2}];
+  const cells=[];
+  for(const a of cols) for(const b of rows) if(a.n>0&&b.n>0)
+    cells.push({px:a.d,py:b.d,sx:a.s,sy:b.s,w:a.n,h:b.n,col:a.c,row:b.c});
+  return cells;
+}
+function previewToSource(x,y){
+  for(const c of previewCells()) if(x>=c.px&&y>=c.py&&x<c.px+c.w&&y<c.py+c.h)
+    return {x:c.sx+x-c.px,y:c.sy+y-c.py,cell:c};
+  return null;
+}
+function partsForRect(rect){
+  const out=[];
+  for(const c of previewCells()){
+    const x0=Math.max(rect.x,c.px),y0=Math.max(rect.y,c.py);
+    const x1=Math.min(rect.x+rect.w,c.px+c.w),y1=Math.min(rect.y+rect.h,c.py+c.h);
+    if(x1>x0&&y1>y0)out.push({sx:x0-rect.x,sy:y0-rect.y,
+      dx:c.sx+x0-c.px,dy:c.sy+y0-c.py,w:x1-x0,h:y1-y0,cell:c});
+  }
+  return out;
+}
+function boundsForParts(parts){
+  if(!parts.length)return null;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  for(const p of parts){x0=Math.min(x0,p.dx);y0=Math.min(y0,p.dy);x1=Math.max(x1,p.dx+p.w);y1=Math.max(y1,p.dy+p.h);}
+  x0=Math.max(0,Math.floor(x0));y0=Math.max(0,Math.floor(y0));
+  x1=Math.min(S.w,Math.ceil(x1));y1=Math.min(S.h,Math.ceil(y1));
+  return x1>x0&&y1>y0?{x:x0,y:y0,w:x1-x0,h:y1-y0}:null;
+}
+function samplePreview(image,rect){
+  const out=mkCanvas(rect.w,rect.h),ctx=out.getContext("2d");
+  ctx.imageSmoothingEnabled=false;
+  for(const p of partsForRect(rect))ctx.drawImage(image,p.dx,p.dy,p.w,p.h,p.sx,p.sy,p.w,p.h);
+  return out;
+}
+
+/* Document setup; the selected file is read, never written or overwritten. */
+function validSize(w,h){return Number.isInteger(w)&&Number.isInteger(h)&&w>0&&h>0&&w<=MAX_SIDE&&h<=MAX_SIDE&&w*h<=MAX_PIXELS;}
+function setupDoc(w,h,img){
+  if(!validSize(w,h)){flash("Image too large or invalid: maximum edge 8192 px and maximum area 32 megapixels.");return false;}
+  finishEditor(false);endSourcePan();
+  let nextArt,nextPre,nextStroke;
+  try{
+    nextArt=mkCanvas(w,h);nextPre=mkCanvas(w,h);nextStroke=mkCanvas(w,h);
+    if(img)nextArt.getContext("2d").drawImage(img,0,0,w,h);
+  }catch(err){flash("Could not allocate this image. Try a smaller image.");return false;}
+  const first=!S.loaded;
+  S.w=w;S.h=h;
+  art=nextArt;artCtx=art.getContext("2d",{willReadFrequently:true});
+  pre=nextPre;preCtx=pre.getContext("2d",{willReadFrequently:true});
+  strokeCv=nextStroke;strokeCtx=strokeCv.getContext("2d");scratchCv=null;
+  S.stroke=null;S.selection=null;S.paste=null;S.clipboard=null;S.hover=null;
+  S.undo.length=0;S.redo.length=0;S.clone={src:null,off:null};S.loaded=true;
+  if(first){const g=Math.floor(Math.min(w,h)*.18);S.m={l:g,t:g,r:g,b:g};}
+  clampMargins();syncMarginInputs();
+  $("emptyState").classList.add("hide");$("saveBtn").disabled=false;
+  $("dims").textContent=`${w} \u00d7 ${h}`;
+  refreshControls();fitEditor();fitPreview();draw();
+  flash("Edit in the nine-slice view. The source image is a live, read-only preview.");return true;
+}
+
+/* Brush and clone dabs are spaced in preview coordinates, NOT in wrapped
+ * source coordinates. Crossing a tile seam therefore never draws a long
+ * accidental segment across the source image. */
+function hexToRgb(hex){const n=parseInt(hex.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function innerRadius(r,h){return Math.min(r*h,Math.max(0,r-.75));}
+function maskDab(ctx,side,r,hardness){
+  const c=side/2,g=ctx.createRadialGradient(c,c,innerRadius(r,hardness),c,c,r);
+  g.addColorStop(0,"rgba(0,0,0,1)");g.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g;ctx.fillRect(0,0,side,side);
+}
+function getBrushDab(st){
+  const key=[st.r,st.hardness,st.color].join("/");
+  if(brushCache&&brushCache.key===key)return brushCache.canvas;
+  const side=Math.ceil(st.r*2)+2,c=mkCanvas(side,side),ctx=c.getContext("2d");
+  // Paint a solid colour, then change ONLY its alpha with a separate mask.
+  // A colour-to-transparent-black gradient darkened the soft edge. Separating
+  // colour and coverage also avoids RGB/alpha dithering mismatches in gradients.
+  ctx.fillStyle=st.color;ctx.fillRect(0,0,side,side);
+  ctx.globalCompositeOperation="destination-in";
+  maskDab(ctx,side,st.r,st.hardness);
+  ctx.globalCompositeOperation="source-over";
+  brushCache={key,canvas:c};return c;
+}
+function buildCloneDab(x,y,st){
+  const side=Math.ceil(st.r*2)+2;
+  const c=samplePreview(pre,{x:x+S.clone.off.dx-side/2,y:y+S.clone.off.dy-side/2,w:side,h:side});
+  const ctx=c.getContext("2d");ctx.globalCompositeOperation="destination-in";
+  maskDab(ctx,side,st.r,st.hardness);
+  ctx.globalCompositeOperation="source-over";return c;
+}
+function markDirty(x,y,w,h){
+  if(!S.stroke)return;
+  const d=S.stroke.dirty;
+  d.x0=Math.min(d.x0,Math.max(0,Math.floor(x)-1));d.y0=Math.min(d.y0,Math.max(0,Math.floor(y)-1));
+  d.x1=Math.max(d.x1,Math.min(S.w,Math.ceil(x+w)+1));d.y1=Math.max(d.y1,Math.min(S.h,Math.ceil(y+h)+1));
+}
+function projectDabFree(c,x,y){
+  // Crop every affected preview cell and fold it into its source slice.
+  for(const p of partsForRect({x,y,w:c.width,h:c.height})){
+    strokeCtx.save();strokeCtx.beginPath();strokeCtx.rect(p.dx,p.dy,p.w,p.h);strokeCtx.clip();
+    strokeCtx.drawImage(c,p.sx,p.sy,p.w,p.h,p.dx,p.dy,p.w,p.h);strokeCtx.restore();
+    markDirty(p.dx,p.dy,p.w,p.h);
+  }
+}
+function projectDabClipped(c,x,y,cell){
+  // Map ONLY the physical preview cell containing this dab's centre. Do not
+  // fold neighbouring cells or wrap overflow to the far side of this slice.
+  const dx=x+cell.sx-cell.px,dy=y+cell.sy-cell.py;
+  const x0=Math.max(dx,cell.sx),y0=Math.max(dy,cell.sy);
+  const x1=Math.min(dx+c.width,cell.sx+cell.w),y1=Math.min(dy+c.height,cell.sy+cell.h);
+  if(x1<=x0||y1<=y0)return;
+  strokeCtx.save();strokeCtx.beginPath();
+  strokeCtx.rect(cell.sx,cell.sy,cell.w,cell.h);strokeCtx.clip();
+  strokeCtx.drawImage(c,dx,dy);strokeCtx.restore();
+  markDirty(x0,y0,x1-x0,y1-y0);
+}
+function projectDabWrapped(c,x,y,reg){
+  const W=reg.w,H=reg.h;
+  let sx=x+reg.sx-reg.px,sy=y+reg.sy-reg.py;
+  if(reg.col===1)sx=reg.sx+mod(sx+c.width/2-reg.sx,W)-c.width/2;
+  if(reg.row===1)sy=reg.sy+mod(sy+c.height/2-reg.sy,H)-c.height/2;
+  const xmin=reg.col===1?Math.floor((reg.sx-sx-c.width)/W)+1:0;
+  const xmax=reg.col===1?Math.ceil((reg.sx+W-sx)/W)-1:0;
+  const ymin=reg.row===1?Math.floor((reg.sy-sy-c.height)/H)+1:0;
+  const ymax=reg.row===1?Math.ceil((reg.sy+H-sy)/H)-1:0;
+  // For tiny tile periods, folding pixels avoids hundreds of thousands of
+  // draw calls. Maximum alpha avoids repeatedly darkening the same alias.
+  if((xmax-xmin+1)*(ymax-ymin+1)>16){foldLargeDab(c,sx,sy,reg);return;}
+  strokeCtx.save();strokeCtx.beginPath();strokeCtx.rect(reg.sx,reg.sy,W,H);strokeCtx.clip();
+  for(let ix=xmin;ix<=xmax;ix++)for(let iy=ymin;iy<=ymax;iy++){
+    const dx=sx+ix*W,dy=sy+iy*H;
+    strokeCtx.drawImage(c,dx,dy);
+    const x0=Math.max(dx,reg.sx),y0=Math.max(dy,reg.sy);
+    const x1=Math.min(dx+c.width,reg.sx+W),y1=Math.min(dy+c.height,reg.sy+H);
+    if(x1>x0&&y1>y0)markDirty(x0,y0,x1-x0,y1-y0);
+  }
+  strokeCtx.restore();
+}
+function foldLargeDab(c,sx,sy,reg){
+  const x0=reg.col===1?reg.sx:Math.max(reg.sx,Math.floor(sx));
+  const y0=reg.row===1?reg.sy:Math.max(reg.sy,Math.floor(sy));
+  const x1=reg.col===1?reg.sx+reg.w:Math.min(reg.sx+reg.w,Math.ceil(sx+c.width));
+  const y1=reg.row===1?reg.sy+reg.h:Math.min(reg.sy+reg.h,Math.ceil(sy+c.height));
+  const w=x1-x0,h=y1-y0;if(w<=0||h<=0)return;
+  const out=mkCanvas(w,h),ctx=out.getContext("2d"),dst=ctx.createImageData(w,h);
+  const src=c.getContext("2d").getImageData(0,0,c.width,c.height).data;
+  const bx=Math.round(sx),by=Math.round(sy);
+  for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){
+    let dx=bx+x,dy=by+y;
+    if(reg.col===1)dx=reg.sx+mod(dx-reg.sx,reg.w);
+    if(reg.row===1)dy=reg.sy+mod(dy-reg.sy,reg.h);
+    if(dx<x0||dy<y0||dx>=x1||dy>=y1)continue;
+    const si=(y*c.width+x)*4,di=((dy-y0)*w+dx-x0)*4;
+    if(src[si+3]>dst.data[di+3])for(let k=0;k<4;k++)dst.data[di+k]=src[si+k];
+  }
+  ctx.putImageData(dst,0,0);strokeCtx.drawImage(out,x0,y0);markDirty(x0,y0,w,h);
+}
+function stampOne(x,y){
+  const st=S.stroke;if(!st)return;
+  const point=previewToSource(x,y);if(!point)return;
+  if(!st.tileOnly&&st.region&&(point.cell.col!==st.region.col||point.cell.row!==st.region.row))return;
+  const c=st.tool==="clone"&&!st.erase?buildCloneDab(x,y,st):getBrushDab(st);
+  if(st.tileOnly)projectDabClipped(c,x-c.width/2,y-c.height/2,point.cell);
+  else if(st.region)projectDabWrapped(c,x-c.width/2,y-c.height/2,st.region);
+  else projectDabFree(c,x-c.width/2,y-c.height/2);
+}
+function paintSegment(ax,ay,bx,by){
+  const st=S.stroke,spacing=Math.max(.75,st.r*.14),dist=Math.hypot(bx-ax,by-ay);
+  if(dist===0&&st.first){stampOne(ax,ay);st.first=false;st.carry=spacing;return;}
+  let t=st.carry;
+  while(t<=dist){const f=dist===0?0:t/dist;stampOne(ax+(bx-ax)*f,ay+(by-ay)*f);t+=spacing;}
+  st.carry=t-dist;
+}
+function beginStroke(x,y){
+  const point=previewToSource(x,y);if(!point)return false;
+  if(S.tool==="clone"&&!S.brush.erase){
+    if(!S.clone.src){flash("Alt-click in the nine-slice editor to set the clone source first.");return false;}
+    if(!S.clone.off)S.clone.off={dx:S.clone.src.x-x,dy:S.clone.src.y-y};
+  }
+  S.selection=null;
+  preCtx.clearRect(0,0,S.w,S.h);preCtx.drawImage(art,0,0);strokeCtx.clearRect(0,0,S.w,S.h);
+  S.stroke={tool:S.tool,r:Math.max(.5,S.brush.size/2),hardness:S.brush.hardness,
+    color:S.brush.color,opacity:S.brush.opacity,erase:S.brush.erase,
+    // Snapshot the scope for this stroke. Tile-only follows each dab's cell,
+    // whereas the older wrap mode keeps its starting source-slice region.
+    tileOnly:S.tileOnly,region:!S.tileOnly&&S.wrap?point.cell:null,
+    last:{x,y},carry:0,first:true,
+    dirty:{x0:Infinity,y0:Infinity,x1:-Infinity,y1:-Infinity}};
+  paintSegment(x,y,x,y);refreshControls();return true;
+}
+function extendStroke(x,y){
+  const st=S.stroke;if(!st)return;paintSegment(st.last.x,st.last.y,x,y);st.last={x,y};
+}
+function compositeStroke(ctx,st){
+  const d=st.dirty,w=d.x1-d.x0,h=d.y1-d.y0;
+  if(!isFinite(d.x0)||w<=0||h<=0)return;
+  // Use the identical draw operation for the live result and the commit.
+  // Mixing cropped and whole-canvas draws can round partial opacity differently.
+  ctx.save();ctx.globalAlpha=st.opacity;
+  ctx.globalCompositeOperation=st.erase?"destination-out":"source-over";
+  ctx.drawImage(strokeCv,d.x0,d.y0,w,h,d.x0,d.y0,w,h);ctx.restore();
+}
+function endStroke(commit=true){
+  const st=S.stroke;if(!st)return;S.stroke=null;
+  const d=st.dirty;
+  if(commit&&isFinite(d.x0)&&d.x1>d.x0&&d.y1>d.y0){
+    const b={x:d.x0,y:d.y0,w:d.x1-d.x0,h:d.y1-d.y0};
+    pushHistory(b);
+    compositeStroke(artCtx,st);
+  }
+  strokeCtx.clearRect(0,0,S.w,S.h);refreshControls();draw();
+}
+
+/* History stores only affected source rectangles. Paste is one operation. */
+function trimHistory(stack){
+  let bytes=stack.reduce((n,e)=>n+e.data.data.byteLength,0);
+  while(stack.length>MAX_UNDO||(stack.length>1&&bytes>HISTORY_BYTES))bytes-=stack.shift().data.data.byteLength;
+}
+function pushHistory(b){
+  S.undo.push({x:b.x,y:b.y,data:artCtx.getImageData(b.x,b.y,b.w,b.h)});
+  trimHistory(S.undo);S.redo.length=0;
+}
+function undo(){
+  finishEditor(true);if(S.paste){cancelPaste();return;}
+  const e=S.undo.pop();if(!e)return;
+  S.redo.push({x:e.x,y:e.y,data:artCtx.getImageData(e.x,e.y,e.data.width,e.data.height)});
+  artCtx.putImageData(e.data,e.x,e.y);S.selection=null;trimHistory(S.redo);refreshControls();draw();
+}
+function redo(){
+  finishEditor(true);if(S.paste){flash("Apply or cancel the floating paste before redo.");return;}
+  const e=S.redo.pop();if(!e)return;
+  S.undo.push({x:e.x,y:e.y,data:artCtx.getImageData(e.x,e.y,e.data.width,e.data.height)});
+  artCtx.putImageData(e.data,e.x,e.y);S.selection=null;trimHistory(S.undo);refreshControls();draw();
+}
+
+/* Selection clipboard contains preview pixels at native resolution; guides,
+ * background, zoom and pointer overlays are never included. */
+function selectionFrom(a,b){
+  const ns=previewNativeSize();
+  const x0=clamp(Math.floor(Math.min(a.x,b.x)),0,ns.w),y0=clamp(Math.floor(Math.min(a.y,b.y)),0,ns.h);
+  const x1=clamp(Math.ceil(Math.max(a.x,b.x)),0,ns.w),y1=clamp(Math.ceil(Math.max(a.y,b.y)),0,ns.h);
+  return x1>x0&&y1>y0?{x:x0,y:y0,w:x1-x0,h:y1-y0}:null;
+}
+function copySelection(){
+  if(!S.loaded||!S.selection||S.paste)return false;
+  finishEditor(true);const r=S.selection;
+  if(r.w*r.h>MAX_PIXELS){flash("Selection too large to copy. Select a smaller rectangle (32 megapixels maximum).");return false;}
+  S.clipboard={canvas:samplePreview(art,r),x:r.x,y:r.y};
+  refreshControls();flash(`Copied ${r.w} \u00d7 ${r.h} preview pixels to the app clipboard. Paste to position and soften them.`);return true;
+}
+function clearSelection(){
+  if(!S.loaded||!S.selection||S.paste)return;
+  finishEditor(true);const parts=partsForRect(S.selection),b=boundsForParts(parts);if(!b)return;
+  pushHistory(b);for(const p of parts)artCtx.clearRect(p.dx,p.dy,p.w,p.h);
+  refreshControls();draw();flash("Cleared selected source pixels and their linked copies.");
+}
+function cutSelection(){if(copySelection())clearSelection();}
+function startPaste(canvas=null){
+  if(!S.loaded){flash("Open or create an image before pasting.");return;}
+  finishEditor(true);
+  if(S.paste){flash("Apply or cancel the current paste first.");return;}
+  if(canvas)S.clipboard={canvas,x:0,y:0};
+  const cb=S.clipboard;if(!cb){flash("Select a rectangle in the editor and copy it first.");return;}
+  const ns=previewNativeSize(),r=editStage.getBoundingClientRect();
+  // Keep the initial position visible. A visible selection's top-left wins;
+  // otherwise centre the patch in the visible part of the editor.
+  const left=clamp(-S.view.ox/S.view.z,0,ns.w),top=clamp(-S.view.oy/S.view.z,0,ns.h);
+  const right=clamp((r.width-S.view.ox)/S.view.z,0,ns.w),bottom=clamp((r.height-S.view.oy)/S.view.z,0,ns.h);
+  let x=S.selection?S.selection.x:Math.round((left+right-cb.canvas.width)/2);
+  let y=S.selection?S.selection.y:Math.round((top+bottom-cb.canvas.height)/2);
+  x=clamp(x,0,Math.max(0,ns.w-cb.canvas.width));y=clamp(y,0,Math.max(0,ns.h-cb.canvas.height));
+  S.paste={canvas:cb.canvas,x,y,w:cb.canvas.width,h:cb.canvas.height,masked:null,maskDirty:true,projection:null,dirty:true};
+  S.selection=null;S.hover=null;refreshControls();draw();
+  flash("Drag the pasted patch. Adjust Paste hardness / Opacity. Enter applies; Escape cancels.");
+}
+function buildPasteMask(p){
+  const c=mkCanvas(p.w,p.h),ctx=c.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(p.canvas,0,0);
+  const image=ctx.getImageData(0,0,p.w,p.h),a=image.data;
+  const feather=(1-S.pasteHardness)*Math.min(p.w,p.h)/2;
+  if(feather>0){
+    for(let y=0;y<p.h;y++)for(let x=0;x<p.w;x++){
+      const distance=Math.min(x+.5,p.w-x-.5,y+.5,p.h-y-.5);
+      const t=clamp(distance/feather,0,1),coverage=t*t*(3-2*t);
+      a[(y*p.w+x)*4+3]=Math.round(a[(y*p.w+x)*4+3]*coverage);
+    }
+    ctx.putImageData(image,0,0);
+  }
+  p.masked=c;p.pixels=image.data;p.maskDirty=false;p.dirty=true;
+}
+/* Fold a paste back into the original nine slices. Duplicate destinations
+ * use the highest alpha ONCE instead of source-over blending repeated copies.
+ * The rule is deterministic, including a patch spanning multiple centre tiles. */
+function projectPaste(p){
+  const parts=partsForRect(p),b=boundsForParts(parts);if(!b)return null;
+  const c=mkCanvas(b.w,b.h),ctx=c.getContext("2d"),out=ctx.createImageData(b.w,b.h),dst=out.data,src=p.pixels;
+  let any=false;
+  for(const q of parts)for(let y=0;y<q.h;y++){
+    let si=((q.sy+y)*p.w+q.sx)*4,di=((q.dy-b.y+y)*b.w+q.dx-b.x)*4;
+    for(let x=0;x<q.w;x++,si+=4,di+=4){
+      const alpha=src[si+3];
+      if(alpha>0&&alpha>=dst[di+3]){dst[di]=src[si];dst[di+1]=src[si+1];dst[di+2]=src[si+2];dst[di+3]=alpha;any=true;}
+    }
+  }
+  if(!any)return null;
+  ctx.putImageData(out,0,0);return {canvas:c,...b};
+}
+function ensurePasteProjection(){
+  const p=S.paste;if(!p)return null;
+  if(p.maskDirty)buildPasteMask(p);
+  if(p.dirty){p.projection=projectPaste(p);p.dirty=false;}
+  return p.projection;
+}
+function commitPaste(){
+  if(!S.paste)return false;
+  const projected=ensurePasteProjection();
+  if(!projected||S.pasteOpacity===0){flash("Nothing to apply: the patch is transparent or outside the preview.");return false;}
+  pushHistory(projected);artCtx.save();artCtx.globalAlpha=S.pasteOpacity;
+  artCtx.drawImage(projected.canvas,projected.x,projected.y);artCtx.restore();
+  S.paste=null;gesture=null;editStage.classList.remove("moving");refreshControls();draw();
+  flash("Paste applied to the source and all linked tiles. Undo reverts it in one step.");return true;
+}
+function cancelPaste(){
+  if(!S.paste)return;S.paste=null;gesture=null;editStage.classList.remove("moving");
+  refreshControls();draw();flash("Paste cancelled. The source pixels were not changed.");
+}
+function movePaste(x,y){
+  if(!S.paste)return;const p=S.paste,ns=previewNativeSize();
+  p.x=clamp(Math.round(x),1-p.w,ns.w-1);p.y=clamp(Math.round(y),1-p.h,ns.h-1);
+  p.dirty=true;refreshPasteStatus();draw();
+}
+function refreshPasteStatus(){
+  const p=S.paste;
+  if(p){const f=(1-S.pasteHardness)*Math.min(p.w,p.h)/2;
+    $("pasteStatus").textContent=`${p.w}\u00d7${p.h} at ${p.x}, ${p.y} \u00b7 feather ${f.toFixed(1)} px \u00b7 Enter to apply`;
+  }else if(S.selection)$("pasteStatus").textContent=`${S.selection.w}\u00d7${S.selection.h} selected`;
+  else $("pasteStatus").textContent=S.clipboard?"Clipboard ready \u00b7 Paste to place":"Select a rectangle to copy";
+}
+function refreshControls(){
+  undoBtn.disabled=!S.undo.length&&!S.paste;redoBtn.disabled=!S.redo.length||!!S.paste;
+  $("copyBtn").disabled=$("cutBtn").disabled=!S.selection||!!S.paste;
+  $("pasteBtn").disabled=!S.clipboard||!!S.paste||!S.loaded;
+  $("applyPaste").disabled=$("cancelPaste").disabled=!S.paste;
+  $("pasteControls").classList.toggle("active",!!S.paste);
+  refreshPasteStatus();
+}
+
+/* One true live composite is rendered by both panes. The committed art stays
+ * intact until mouse-up / Apply, so Cancel never needs a lossy restore. */
+function liveArtwork(){
+  if(!S.stroke&&!S.paste)return art;
+  if(!scratchCv||scratchCv.width!==S.w||scratchCv.height!==S.h)scratchCv=mkCanvas(S.w,S.h);
+  const ctx=scratchCv.getContext("2d");ctx.clearRect(0,0,S.w,S.h);ctx.drawImage(art,0,0);
+  ctx.save();
+  if(S.stroke)compositeStroke(ctx,S.stroke);
+  if(S.paste){const p=ensurePasteProjection();if(p){ctx.globalCompositeOperation="source-over";ctx.globalAlpha=S.pasteOpacity;ctx.drawImage(p.canvas,p.x,p.y);}}
+  ctx.restore();return scratchCv;
+}
+function sizeCanvas(cv,stage){
+  const r=stage.getBoundingClientRect(),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
+  if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}return{w,h};
+}
+function draw(){
+  if(rafPending)return;rafPending=true;
+  requestAnimationFrame(()=>{rafPending=false;const image=S.loaded?liveArtwork():null;drawEditor(image);drawPreview(image);});
+}
+function drawEditor(image){
+  const {w,h}=sizeCanvas(editCv,editStage);eCtx.setTransform(1,0,0,1,0,0);eCtx.clearRect(0,0,w,h);if(!image)return;
+  const z=S.view.z*dpr,ox=S.view.ox*dpr,oy=S.view.oy*dpr,ns=previewNativeSize();
+  eCtx.fillStyle=pBg.value;eCtx.fillRect(ox,oy,ns.w*z,ns.h*z);
+  eCtx.imageSmoothingEnabled=pFilter.checked;eCtx.imageSmoothingQuality="high";
+  // Neighbouring cells share rounded destination edges (no display gaps).
+  for(const c of previewCells()){
+    const x0=Math.round(ox+c.px*z),y0=Math.round(oy+c.py*z),x1=Math.round(ox+(c.px+c.w)*z),y1=Math.round(oy+(c.py+c.h)*z);
+    if(x1>x0&&y1>y0)eCtx.drawImage(image,c.sx,c.sy,c.w,c.h,x0,y0,x1-x0,y1-y0);
+  }
+  if(pSeams.checked){
+    const {l,t}=S.m;eCtx.save();eCtx.strokeStyle="rgba(224,164,88,.65)";eCtx.lineWidth=1;
+    eCtx.beginPath();
+    for(const x of[l,l+cw(),l+cw()*2]){const px=Math.round(ox+x*z)+.5;eCtx.moveTo(px,oy);eCtx.lineTo(px,oy+ns.h*z);}
+    for(const y of[t,t+ch(),t+ch()*2]){const py=Math.round(oy+y*z)+.5;eCtx.moveTo(ox,py);eCtx.lineTo(ox+ns.w*z,py);}
+    eCtx.stroke();eCtx.restore();
+  }
+  eCtx.save();eCtx.lineWidth=1;eCtx.strokeStyle="rgba(223,230,237,.4)";eCtx.strokeRect(ox,oy,ns.w*z,ns.h*z);eCtx.restore();
+  if(S.selection)drawOutline(S.selection,ox,oy,z,false);
+  if(S.paste)drawOutline(S.paste,ox,oy,z,true);
+  if(S.tool==="clone"&&S.clone.src){
+    const anchor=S.hover&&S.clone.off?{x:S.hover.x+S.clone.off.dx,y:S.hover.y+S.clone.off.dy}:S.clone.src;
+    drawCross(eCtx,ox+anchor.x*z,oy+anchor.y*z);
+  }
+  const tileOnly=S.stroke?S.stroke.tileOnly:S.tileOnly;
+  if(S.hover&&!S.paste&&S.tool!=="select"&&!spaceDown&&gesture?.kind!=="pan"){
+    eCtx.save();
+    const point=tileOnly?previewToSource(S.hover.x,S.hover.y):null;
+    if(point){
+      const c=point.cell;
+      const x0=Math.round(ox+c.px*z),y0=Math.round(oy+c.py*z);
+      const x1=Math.round(ox+(c.px+c.w)*z),y1=Math.round(oy+(c.py+c.h)*z);
+      // Outline, rather than tint, the active tile so the colour stays honest.
+      eCtx.strokeStyle="#5fd0c5";eCtx.lineWidth=1.5*dpr;
+      eCtx.strokeRect(x0,y0,x1-x0,y1-y0);
+      eCtx.beginPath();eCtx.rect(x0,y0,x1-x0,y1-y0);eCtx.clip();
+    }
+    eCtx.lineWidth=1.5*dpr;eCtx.strokeStyle="rgba(0,0,0,.85)";eCtx.beginPath();
+    eCtx.arc(ox+S.hover.x*z,oy+S.hover.y*z,S.brush.size*z/2,0,Math.PI*2);eCtx.stroke();
+    eCtx.lineWidth=.75*dpr;eCtx.strokeStyle="rgba(255,255,255,.9)";eCtx.stroke();eCtx.restore();
+  }
+  const scope=tileOnly?"pointer tile only":S.wrap?"wrap in slice":"across slices";
+  editHint.textContent=`${Math.round(S.view.z*100)}% \u00b7 ${ns.w}\u00d7${ns.h} \u00b7 centre tiled 2\u00d72 \u00b7 ${scope} \u00b7 linked copies update`;
+}
+function drawPreview(image){
+  const {w,h}=sizeCanvas(prevCv,prevStage);pCtx.setTransform(1,0,0,1,0,0);pCtx.clearRect(0,0,w,h);if(!image)return;
+  const z=S.pview.z*dpr,ox=S.pview.ox*dpr,oy=S.pview.oy*dpr;
+  pCtx.imageSmoothingEnabled=S.pview.z<1;pCtx.imageSmoothingQuality="high";
+  pCtx.drawImage(image,0,0,S.w,S.h,ox,oy,S.w*z,S.h*z);
+  if(S.guides){
+    pCtx.save();pCtx.lineWidth=1;pCtx.strokeStyle="rgba(95,208,197,.85)";pCtx.setLineDash([6*dpr,4*dpr]);pCtx.beginPath();
+    for(const x of[S.m.l,S.w-S.m.r]){pCtx.moveTo(ox+x*z,oy);pCtx.lineTo(ox+x*z,oy+S.h*z);}
+    for(const y of[S.m.t,S.h-S.m.b]){pCtx.moveTo(ox,oy+y*z);pCtx.lineTo(ox+S.w*z,oy+y*z);}
+    pCtx.stroke();pCtx.restore();
+  }
+  pCtx.save();pCtx.strokeStyle="rgba(223,230,237,.4)";pCtx.strokeRect(ox,oy,S.w*z,S.h*z);pCtx.restore();
+  prevHint.textContent=`${Math.round(S.pview.z*100)}% \u00b7 ${S.w}\u00d7${S.h} source \u00b7 read-only`+(S.paste?" \u00b7 live paste (not applied)":S.stroke?" \u00b7 live stroke":"");
+}
+function drawOutline(r,ox,oy,z,floating){
+  const x=ox+r.x*z,y=oy+r.y*z,w=r.w*z,h=r.h*z;
+  eCtx.save();eCtx.lineWidth=1.5*dpr;eCtx.strokeStyle="#101316";eCtx.strokeRect(x,y,w,h);
+  eCtx.setLineDash([5*dpr,4*dpr]);eCtx.strokeStyle=floating?"#5fd0c5":"#ffffff";eCtx.strokeRect(x,y,w,h);eCtx.setLineDash([]);
+  if(floating){eCtx.fillStyle="#5fd0c5";for(const a of[x,x+w])for(const b of[y,y+h])eCtx.fillRect(a-3*dpr,b-3*dpr,6*dpr,6*dpr);}
+  eCtx.restore();
+}
+function drawCross(ctx,x,y){
+  ctx.save();ctx.strokeStyle="#e0a458";ctx.lineWidth=1.5*dpr;const r=7*dpr;
+  ctx.beginPath();ctx.moveTo(x-r,y);ctx.lineTo(x+r,y);ctx.moveTo(x,y-r);ctx.lineTo(x,y+r);ctx.stroke();ctx.restore();
+}
+
+/* Navigation */
+function fitTo(view,stage,w,h){
+  const r=stage.getBoundingClientRect();view.z=clamp(Math.min((r.width-48)/w,(r.height-64)/h),.02,8);
+  view.ox=(r.width-w*view.z)/2;view.oy=(r.height-h*view.z)/2;
+}
+function fitEditor(){if(!S.loaded)return;const ns=previewNativeSize();fitTo(S.view,editStage,ns.w,ns.h);draw();}
+function fitPreview(){if(!S.loaded)return;fitTo(S.pview,prevStage,S.w,S.h);draw();}
+function reset100(view,stage,w,h){const r=stage.getBoundingClientRect();view.z=1;view.ox=(r.width-w)/2;view.oy=(r.height-h)/2;draw();}
+function zoomAt(view,x,y,factor){const z=clamp(view.z*factor,.02,32),ratio=z/view.z;view.ox=x-(x-view.ox)*ratio;view.oy=y-(y-view.oy)*ratio;view.z=z;}
+function stagePos(e,stage,view){const r=stage.getBoundingClientRect(),cssX=e.clientX-r.left,cssY=e.clientY-r.top;return{cssX,cssY,x:(cssX-view.ox)/view.z,y:(cssY-view.oy)/view.z};}
+function inRect(p,r){return p.x>=r.x&&p.y>=r.y&&p.x<r.x+r.w&&p.y<r.y+r.h;}
+function pickColour(x,y){
+  const p=previewToSource(x,y);if(!p)return;
+  const a=artCtx.getImageData(Math.floor(p.x),Math.floor(p.y),1,1).data;
+  if(!a[3]){flash("Transparent pixel; colour unchanged.");return;}
+  S.brush.color="#"+[a[0],a[1],a[2]].map(v=>v.toString(16).padStart(2,"0")).join("");colorIn.value=S.brush.color;
+  flash(`Picked ${S.brush.color} from the nine-slice preview.`);
+}
+
+/* ALL mutating pointer input is attached exclusively to the nine-slice editor. */
+editStage.addEventListener("pointerdown",e=>{
+  if(!S.loaded||gesture||(e.button!==0&&e.button!==1))return;
+  e.preventDefault();document.activeElement?.blur();editStage.setPointerCapture(e.pointerId);
+  const p=stagePos(e,editStage,S.view);
+  S.hover=previewToSource(p.x,p.y)?{x:p.x,y:p.y}:null;
+  if(e.button===1||spaceDown||(e.shiftKey&&e.altKey)){
+    gesture={kind:"pan",id:e.pointerId,sx:p.cssX,sy:p.cssY,ox:S.view.ox,oy:S.view.oy};editStage.classList.add("panning");return;
+  }
+  if(S.paste){
+    if(inRect(p,S.paste)){
+      gesture={kind:"paste",id:e.pointerId,sx:p.x,sy:p.y,x:S.paste.x,y:S.paste.y};editStage.classList.add("moving");
+    }else flash("Drag inside the pasted outline, or Apply / Cancel before editing elsewhere.");
+    return;
+  }
+  if(!previewToSource(p.x,p.y))return;
+  if(e.altKey){
+    if(S.tool==="clone"){S.clone.src={x:p.x,y:p.y};S.clone.off=null;flash("Clone source set in the nine-slice preview.");}
+    else pickColour(p.x,p.y);draw();return;
+  }
+  if(S.tool==="select"){
+    S.selection=null;gesture={kind:"select",id:e.pointerId,start:{x:p.x,y:p.y}};refreshControls();draw();return;
+  }
+  if(beginStroke(p.x,p.y))gesture={kind:"paint",id:e.pointerId};draw();
+});
+editStage.addEventListener("pointermove",e=>{
+  if(!S.loaded)return;const p=stagePos(e,editStage,S.view);S.hover=previewToSource(p.x,p.y)?{x:p.x,y:p.y}:null;
+  if(gesture&&gesture.id===e.pointerId){
+    if(gesture.kind==="pan"){S.view.ox=gesture.ox+p.cssX-gesture.sx;S.view.oy=gesture.oy+p.cssY-gesture.sy;}
+    else if(gesture.kind==="paste")movePaste(gesture.x+p.x-gesture.sx,gesture.y+p.y-gesture.sy);
+    else if(gesture.kind==="select"){S.selection=selectionFrom(gesture.start,p);refreshControls();}
+    else if(gesture.kind==="paint"){
+      const events=e.getCoalescedEvents?e.getCoalescedEvents():[];
+      for(const q of events){const pos=stagePos(q,editStage,S.view);extendStroke(pos.x,pos.y);}
+      if(!events.length)extendStroke(p.x,p.y);
+    }
+  }
+  editStage.classList.toggle("moving",!!S.paste&&gesture?.kind!=="pan"&&inRect(p,S.paste));draw();
+});
+function finishEditor(commit=true){
+  const g=gesture;gesture=null;
+  if(g&&g.kind==="paint")endStroke(commit);
+  if(g&&g.kind==="select"&&!commit)S.selection=null;
+  editStage.classList.remove("panning","moving");refreshControls();draw();
+}
+editStage.addEventListener("pointerup",e=>{
+  if(!gesture||gesture.id!==e.pointerId)return;
+  const p=stagePos(e,editStage,S.view);
+  if(gesture.kind==="select")S.selection=selectionFrom(gesture.start,p);
+  if(gesture.kind==="paint")extendStroke(p.x,p.y);
+  finishEditor(true);
+});
+editStage.addEventListener("pointercancel",()=>finishEditor(false));
+editStage.addEventListener("lostpointercapture",()=>{if(gesture)finishEditor(true);});
+editStage.addEventListener("pointerleave",()=>{S.hover=null;draw();});
+editStage.addEventListener("contextmenu",e=>e.preventDefault());
+editStage.addEventListener("wheel",e=>{
+  e.preventDefault();if(!S.loaded||gesture)return;const p=stagePos(e,editStage,S.view);
+  zoomAt(S.view,p.cssX,p.cssY,Math.pow(.9992,e.deltaY));S.hover=null;draw();
+},{passive:false});
+
+/* The source view is read-only: these handlers ONLY change view offsets. */
+prevStage.addEventListener("pointerdown",e=>{
+  if(!S.loaded||(e.button!==0&&e.button!==1))return;e.preventDefault();
+  prevStage.setPointerCapture(e.pointerId);const p=stagePos(e,prevStage,S.pview);
+  sourcePan={id:e.pointerId,sx:p.cssX,sy:p.cssY,ox:S.pview.ox,oy:S.pview.oy};prevStage.classList.add("panning");
+});
+prevStage.addEventListener("pointermove",e=>{
+  if(!sourcePan||sourcePan.id!==e.pointerId)return;const p=stagePos(e,prevStage,S.pview);
+  S.pview.ox=sourcePan.ox+p.cssX-sourcePan.sx;S.pview.oy=sourcePan.oy+p.cssY-sourcePan.sy;draw();
+});
+function endSourcePan(){sourcePan=null;prevStage.classList.remove("panning");}
+prevStage.addEventListener("pointerup",endSourcePan);prevStage.addEventListener("pointercancel",endSourcePan);prevStage.addEventListener("lostpointercapture",endSourcePan);
+prevStage.addEventListener("wheel",e=>{e.preventDefault();if(!S.loaded)return;const p=stagePos(e,prevStage,S.pview);zoomAt(S.pview,p.cssX,p.cssY,Math.pow(.9992,e.deltaY));draw();},{passive:false});
+prevStage.addEventListener("contextmenu",e=>e.preventDefault());
+window.addEventListener("blur",()=>{spaceDown=false;finishEditor(true);endSourcePan();});
+
+/* Controls */
+sizeIn.oninput=()=>{S.brush.size=+sizeIn.value;$("sizeV").textContent=sizeIn.value;draw();};
+hardIn.oninput=()=>{S.brush.hardness=+hardIn.value/100;$("hardV").textContent=hardIn.value+"%";};
+opacIn.oninput=()=>{S.brush.opacity=+opacIn.value/100;$("opacV").textContent=opacIn.value+"%";};
+colorIn.oninput=()=>{S.brush.color=colorIn.value;};
+eraseIn.onchange=()=>{S.brush.erase=eraseIn.checked;};
+wrapIn.onchange=()=>{finishEditor(true);S.wrap=wrapIn.checked;draw();};
+function syncPaintScopeControls(){
+  tileOnlyIn.checked=S.tileOnly;wrapIn.checked=S.wrap;wrapIn.disabled=S.tileOnly;
+  $("wrapLabel").classList.toggle("control-muted",S.tileOnly);
+  $("tileOnlyWrap").classList.toggle("scope-on",S.tileOnly);
+}
+tileOnlyIn.onchange=()=>{
+  finishEditor(true);S.tileOnly=tileOnlyIn.checked;syncPaintScopeControls();draw();
+  flash(S.tileOnly
+    ?"Pointer tile only: brush, clone and eraser stay inside the tile under each dab. No edge wrapping; linked copies still update."
+    :S.wrap?"Pointer tile only off. Wrap in slice restored: strokes wrap within their starting slice."
+    :"Pointer tile only off. Brush, clone and eraser can paint across tile boundaries.");
+};
+guidesIn.onchange=()=>{S.guides=guidesIn.checked;draw();};pFilter.onchange=pSeams.onchange=pBg.oninput=draw;
+$("pasteHard").oninput=()=>{S.pasteHardness=+$("pasteHard").value/100;$("pasteHardV").textContent=$("pasteHard").value+"%";if(S.paste)S.paste.maskDirty=true;refreshPasteStatus();draw();};
+$("pasteOpacity").oninput=()=>{S.pasteOpacity=+$("pasteOpacity").value/100;$("pasteOpacityV").textContent=$("pasteOpacity").value+"%";draw();};
+function setTool(tool){
+  finishEditor(true);S.tool=tool;
+  for(const name of["brush","clone","select"])$("tool"+name[0].toUpperCase()+name.slice(1)).classList.toggle("on",name===tool);
+  $("colorWrap").style.opacity=tool==="brush"?1:.4;
+  if(tool!=="select")S.selection=null;
+  if(tool==="clone"&&!S.clone.src)flash("Alt-click a source point in the nine-slice editor, then paint to clone.");
+  else if(tool==="select")flash("Drag a rectangle in the nine-slice editor, then Copy and Paste. Escape deselects.");
+  refreshControls();draw();
+}
+$("toolBrush").onclick=()=>setTool("brush");$("toolClone").onclick=()=>setTool("clone");$("toolSelect").onclick=()=>setTool("select");
+for(const [el,key]of[[mLi,"l"],[mTi,"t"],[mRi,"r"],[mBi,"b"]]){
+  el.oninput=()=>{
+    if(el.value==="")return;const v=Number(el.value);if(!Number.isFinite(v))return;
+    finishEditor(true);if(S.paste)cancelPaste();S.selection=null;S.clone={src:null,off:null};
+    S.m[key]=Math.max(0,Math.trunc(v));if(S.loaded)clampMargins();syncMarginInputs();refreshControls();draw();
+  };
+}
+$("fitEdit").onclick=fitEditor;$("fitPrev").onclick=fitPreview;
+$("edit100").onclick=()=>{if(S.loaded){const ns=previewNativeSize();reset100(S.view,editStage,ns.w,ns.h);}};
+$("prev100").onclick=()=>{if(S.loaded)reset100(S.pview,prevStage,S.w,S.h);};
+undoBtn.onclick=undo;redoBtn.onclick=redo;
+$("copyBtn").onclick=copySelection;$("cutBtn").onclick=cutSelection;$("pasteBtn").onclick=()=>startPaste();
+$("applyPaste").onclick=commitPaste;$("cancelPaste").onclick=cancelPaste;
+$("newBtn").onclick=()=>{
+  const answer=prompt("New image size (width x height)","1024x1024");if(!answer)return;
+  const m=answer.trim().match(/^(\d+)\s*[xX\u00d7,\s]\s*(\d+)$/);
+  if(!m){flash("Enter a size such as 1024x1024.");return;}
+  ++loadSequence;setupDoc(Number(m[1]),Number(m[2]),null);
+};
+$("saveBtn").onclick=()=>{
+  if(!S.loaded)return;finishEditor(true);if(S.paste&&!commitPaste())return;
+  const name=`nineslice_${S.w}x${S.h}_l${S.m.l}t${S.m.t}r${S.m.r}b${S.m.b}.png`;
+  art.toBlob(blob=>{
+    if(!blob){flash("PNG export failed. Try a smaller image.");return;}
+    const a=document.createElement("a"),url=URL.createObjectURL(blob);a.href=url;a.download=name;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+    flash("Saved the edited source PNG at original dimensions (no guides or preview background).");
+  },"image/png");
+};
+$("fileIn").onchange=e=>{const f=e.target.files[0];if(f)openFile(f);e.target.value="";};
+function openFile(file){
+  const seq=++loadSequence,url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{URL.revokeObjectURL(url);if(seq===loadSequence)setupDoc(img.naturalWidth,img.naturalHeight,img);};
+  img.onerror=()=>{URL.revokeObjectURL(url);if(seq===loadSequence)flash("That file could not be decoded as an image.");};img.src=url;
+}
+let dragDepth=0;const dropZone=$("dropZone");
+window.addEventListener("dragenter",e=>{e.preventDefault();if(e.dataTransfer&&Array.from(e.dataTransfer.types).includes("Files")){dragDepth++;dropZone.classList.add("show");}});
+window.addEventListener("dragover",e=>e.preventDefault());
+window.addEventListener("dragleave",()=>{if(--dragDepth<=0){dragDepth=0;dropZone.classList.remove("show");}});
+window.addEventListener("drop",e=>{e.preventDefault();dragDepth=0;dropZone.classList.remove("show");const f=e.dataTransfer.files[0];if(f)openFile(f);});
+
+/* Internal copy/paste shortcuts work when opening this file directly. Native
+ * image paste is also supported (Shift+Ctrl/Cmd+V bypasses the local clipboard). */
+function inputFocused(target){return target instanceof Element&&!!target.closest("input,textarea,select,[contenteditable='true']");}
+window.addEventListener("keydown",e=>{
+  const rangeFocused=e.target instanceof Element&&e.target.matches('input[type="range"]');
+  if(inputFocused(e.target)&&!rangeFocused){if(e.key==="Escape")e.target.blur();return;}
+  // A focused slider owns its adjustment keys, but Enter / Escape still
+  // apply / cancel the floating paste after a hardness or opacity change.
+  if(rangeFocused&&["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))return;
+  if(rangeFocused&&(e.key==="Enter"||e.key==="Escape"))e.target.blur();
+  if(e.code==="Space"){spaceDown=true;e.preventDefault();draw();return;}
+  const key=e.key.toLowerCase(),shortcut=e.ctrlKey||e.metaKey;
+  if(shortcut){
+    if(key==="z"){e.preventDefault();e.shiftKey?redo():undo();}
+    else if(key==="y"){e.preventDefault();redo();}
+    else if(key==="c"&&S.selection){e.preventDefault();copySelection();}
+    else if(key==="x"&&S.selection){e.preventDefault();cutSelection();}
+    else if(key==="v"&&S.clipboard&&!e.shiftKey){e.preventDefault();startPaste();}
+    else if(key==="a"&&S.loaded){e.preventDefault();if(!S.paste){setTool("select");const ns=previewNativeSize();S.selection={x:0,y:0,w:ns.w,h:ns.h};refreshControls();draw();}}
+    return;
+  }
+  if(key==="escape"){
+    if(S.paste)cancelPaste();else{finishEditor(false);S.selection=null;$("helpDetails").open=false;refreshControls();draw();}return;
+  }
+  if(S.paste){
+    if(key==="enter"){e.preventDefault();commitPaste();return;}
+    const step=e.shiftKey?10:1,delta={arrowleft:[-step,0],arrowright:[step,0],arrowup:[0,-step],arrowdown:[0,step]}[key];
+    if(delta){e.preventDefault();movePaste(S.paste.x+delta[0],S.paste.y+delta[1]);}
+    return;
+  }
+  if(key==="["||key==="]"){
+    const step=S.brush.size<20?1:S.brush.size<100?4:16;sizeIn.value=clamp(S.brush.size+(key==="["?-step:step),1,600);sizeIn.oninput();
+  }else if(key==="b")setTool("brush");else if(key==="c")setTool("clone");else if(key==="m")setTool("select");
+  else if(key==="e"){eraseIn.checked=!eraseIn.checked;eraseIn.onchange();}
+  else if(key==="t"){tileOnlyIn.checked=!tileOnlyIn.checked;tileOnlyIn.onchange();}
+  else if(key==="delete"||key==="backspace"){if(S.selection){e.preventDefault();clearSelection();}}
+  else if(key==="1")fitEditor();else if(key==="2")fitPreview();
+});
+window.addEventListener("keyup",e=>{if(e.code==="Space"){spaceDown=false;draw();}});
+window.addEventListener("paste",e=>{
+  if(inputFocused(e.target))return;
+  const item=Array.from(e.clipboardData?.items||[]).find(i=>i.type.startsWith("image/"));
+  if(item){
+    e.preventDefault();const file=item.getAsFile();if(!file)return;
+    const url=URL.createObjectURL(file),img=new Image(),seq=loadSequence;
+    img.onload=()=>{
+      URL.revokeObjectURL(url);if(seq!==loadSequence)return;
+      if(!validSize(img.naturalWidth,img.naturalHeight)){flash("Clipboard image is too large.");return;}
+      const c=mkCanvas(img.naturalWidth,img.naturalHeight);c.getContext("2d").drawImage(img,0,0);startPaste(c);
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);flash("The clipboard image could not be decoded.");};img.src=url;
+  }else if(S.clipboard){e.preventDefault();startPaste();}
+});
+function flash(message){
+  clearTimeout(flashTimer);$("status").textContent=message;$("status").classList.add("notice");
+  flashTimer=setTimeout(()=>{$("status").classList.remove("notice");},6000);
+}
+
+/* Resizable panes, including the stacked layout on small screens. */
+(function(){
+  const divider=$("divider"),a=$("paneEdit"),b=$("panePrev");let drag=null;
+  divider.addEventListener("pointerdown",e=>{
+    if(e.button!==0)return;divider.setPointerCapture(e.pointerId);const vertical=window.innerWidth<=860;
+    drag={vertical,start:vertical?e.clientY:e.clientX,aSize:vertical?a.offsetHeight:a.offsetWidth,total:vertical?a.offsetHeight+b.offsetHeight:a.offsetWidth+b.offsetWidth};
+  });
+  divider.addEventListener("pointermove",e=>{
+    if(!drag)return;const now=drag.vertical?e.clientY:e.clientX,min=Math.min(180,drag.total*.25);
+    const n=clamp(drag.aSize+now-drag.start,min,drag.total-min);a.style.flex=`0 0 ${n}px`;b.style.flex="1";draw();
+  });
+  divider.addEventListener("pointerup",()=>drag=null);divider.addEventListener("pointercancel",()=>drag=null);
+})();
+let wasStacked=window.innerWidth<=860;
+window.addEventListener("resize",()=>{
+  dpr=Math.min(2,window.devicePixelRatio||1);const stacked=window.innerWidth<=860;
+  if(stacked!==wasStacked){$("paneEdit").style.flex="";$("panePrev").style.flex="";wasStacked=stacked;}
+  draw();
+});
+new ResizeObserver(draw).observe(document.querySelector("main"));
+syncPaintScopeControls();refreshControls();draw();
+
+</script>
+</body>
+</html>
