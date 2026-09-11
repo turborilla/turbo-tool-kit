@@ -17,6 +17,14 @@
 
 window.TOOLS = [
   {
+    name: "Nine-slice Repair Lab",
+    file: "nine-slice-repair-lab.html",
+    description: "Quilt away the seams in a nine-slice texture. Frame joins, intersections and repeating centres stay linked while it repairs.",
+    tags: ["art", "textures", "sprites"],
+    icon: "\u{1F9EA}",
+    author: "Zacharie",
+  },
+  {
     name: "Nine Slice Studio",
     file: "nine-slice-studio.html",
     description: "Set 9-slice insets on a sprite and paint straight onto the stretched preview. Repeated tiles and seams update live.",
