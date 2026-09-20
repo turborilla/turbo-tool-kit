@@ -20,8 +20,9 @@ window.TOOLS = [
     name: "ShrinkKit",
     file: "shrinkkit.html",
     description: "Compress and resize images and optimize PDFs locally in your browser. Download individual files or a batch ZIP.",
-    tags: ["art", "images", "pdf"],
+    tags: ["art", "textures", "sprites", "images", "pdf"],
     icon: "\u{1F5DC}",
+    author: "Sebastian",
   },
   {
     name: "Nine-slice Repair Lab",
