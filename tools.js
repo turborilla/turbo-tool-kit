@@ -17,6 +17,13 @@
 
 window.TOOLS = [
   {
+    name: "ShrinkKit",
+    file: "shrinkkit.html",
+    description: "Compress and resize images and optimize PDFs locally in your browser. Download individual files or a batch ZIP.",
+    tags: ["art", "images", "pdf"],
+    icon: "\u{1F5DC}",
+  },
+  {
     name: "Nine-slice Repair Lab",
     file: "nine-slice-repair-lab.html",
     description: "Quilt away the seams in a nine-slice texture. Frame joins, intersections and repeating centres stay linked while it repairs.",
