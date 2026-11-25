@@ -1,0 +1,135 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Game Roadmap</title><style>
+*{box-sizing:border-box}body{margin:0;background:#10141c;color:#e9edf5;font:15px system-ui,sans-serif}main{max-width:1160px;margin:auto;padding:40px 24px}
+header,.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:36px;letter-spacing:-1.5px;margin:8px 0}h2{font-size:25px;margin:10px 0}h3{font-size:14px;margin:22px 0 4px;color:#c9d3e3}
+p{line-height:1.6;color:#a8b3c6}small,.muted{color:#91a0b8}
+.eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#94a9c6;font-weight:700}
+button{background:#263246;color:#e9edf5;border:1px solid #394861;border-radius:8px;padding:10px 14px;cursor:pointer;font:inherit}button:hover{background:#354761}.primary{background:#2e65b5}
+.panel{background:#191f2b;border:1px solid #303b4d;border-radius:14px;padding:24px;margin:24px 0}
+.tl{position:relative;height:200px;margin:14px 10px 4px}
+.axis{position:absolute;left:0;right:0;top:100px;height:0}
+.axis .line{position:absolute;left:0;right:0;top:-1.5px;height:3px;background:#35435a;border-radius:3px}
+.tick{position:absolute;top:-7px;width:1px;height:14px;background:#4a5870}.tick span{position:absolute;left:5px;top:-12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#7d8ba1;white-space:nowrap}
+.pt{position:absolute;top:0;width:0;height:0}
+.vac{position:absolute;top:-6px;height:12px;background:repeating-linear-gradient(135deg,#e0525c66 0 4px,#e0525c26 4px 8px);border:1px solid #e0525c;border-radius:3px}
+.vac span{position:absolute;left:50%;top:13px;transform:translateX(-50%);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:#ff8f98;white-space:nowrap}
+.dot{position:absolute;left:0;top:0;transform:translate(-50%,-50%);height:15px;width:15px;border-radius:50%;background:#78aaff;border:3px solid #191f2b;box-shadow:0 0 0 2px #78aaff;z-index:1}
+.pt.release .dot{background:#79dfb4;box-shadow:0 0 0 2px #79dfb4}.pt.sprint .dot{background:#f2c66d;box-shadow:0 0 0 2px #f2c66d;border-radius:3px}
+.lab{position:absolute;top:22px;left:0;transform:translateX(-50%);text-align:center;width:max-content;max-width:180px;font-size:13px;line-height:1.4}
+.pt.edge-l .lab{left:-9px;transform:none;text-align:left}.pt.edge-r .lab{left:auto;right:-9px;transform:none;text-align:right}
+.lab small{display:block}.date{font-size:15px;font-weight:700}
+.count{font-size:36px;font-weight:750;letter-spacing:-1px;color:#83b0ff}.count small{font-size:13px;letter-spacing:0;font-weight:500}
+.goal{border-left:4px solid #79dfb4}.goal.future{border-left-color:#a99af5}.sprintpanel{border-left:4px solid #f2c66d}
+.tag{font-size:11px;font-weight:700;letter-spacing:1px;color:#79dfb4;text-transform:uppercase}.future .tag{color:#b4a6ff}.sprintpanel .tag{color:#f2c66d}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:20px 0}
+.metric{padding:16px;background:#111722;border:1px solid #2c3749;border-radius:9px}.metric strong{display:block;font-size:25px;margin-top:6px}
+.bar{height:6px;background:#303b4d;border-radius:9px;overflow:hidden;margin:12px 0;display:flex}.bar div{height:100%;background:#79dfb4}
+.bar.stack{height:10px}.bar .s-done{background:#79dfb4}.bar .s-prog{background:#78aaff}.bar .s-open{background:#4a5870}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#a8b3c6}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+details{border-top:1px solid #303b4d;margin-top:20px;padding-top:16px}summary{cursor:pointer;font-weight:650}
+label.task{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #283242;flex-wrap:wrap}
+label.task .name{flex:1;min-width:180px}.meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}
+input[type=checkbox]{accent-color:#79dfb4;width:17px;height:17px;flex:none}label.checked .name{text-decoration:line-through;color:#8795ab}
+.pill{border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid transparent;white-space:nowrap}
+.st-prog{background:#1d3358;color:#9cc2ff;border-color:#2e4f85}.st-open{background:#222b3a;color:#a8b3c6;border-color:#36445b}.st-done{background:#173a2e;color:#79dfb4;border-color:#285b49}
+.blocked{background:#3d1f24;color:#ff9ea8;border-color:#6a323b}.blocks{background:#3b301a;color:#f2c66d;border-color:#62502a}.backlog{background:#2a2540;color:#b4a6ff;border-color:#463d6d}
+.who{background:#2b3547;color:#dfe6f2;border-radius:50%;width:24px;height:24px;display:inline-grid;place-items:center;font-size:10px;font-weight:700}
+.who.none{background:transparent;border:1px dashed #4b5a73;color:#7d8ba1}
+.due{color:#a8b3c6;white-space:nowrap}.due.soon{color:#f2c66d}.due.late{color:#ff9ea8;font-weight:700}
+.upnext{list-style:none;padding:0;margin:8px 0 0}.upnext li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #283242;font-size:14px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.right{display:flex;align-items:flex-start;gap:14px}.count .wd{display:block;font-size:13px;font-weight:600;letter-spacing:0;color:#79dfb4;margin-top:2px}
+.fold{background:none;border:1px solid #394861;border-radius:999px;padding:4px 11px;font-size:12px;color:#a8b3c6;margin-top:6px;white-space:nowrap}.fold:hover{background:#263246;color:#e9edf5}
+.collapsed .body{display:none}.collapsed h2{margin-bottom:0}
+.lab .wd{color:#79dfb4}
+a{color:#8db8ff}
+dialog{background:#191f2b;color:#e9edf5;border:1px solid #48566d;border-radius:14px;width:min(760px,94vw);max-height:90vh;overflow:auto;padding:24px}dialog::backdrop{background:#0009}
+textarea{width:100%;height:48vh;background:#10141c;color:#e9edf5;border:1px solid #48566d;border-radius:8px;padding:12px;font:13px monospace}
+footer{color:#8290a6;font-size:12px;margin-top:30px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+@media(max-width:600px){main{padding:20px 14px}.panel{padding:16px}h1{font-size:28px}.count{font-size:27px}.lab{max-width:120px;font-size:11px}.date{font-size:12px}}
+</style></head><body><main>
+<header><div><div class="eyebrow">Product development / release planning</div><h1>Game roadmap</h1><p style="margin:0">Outcomes first. Tasks second.</p></div><div><button onclick="edit()">Edit roadmap</button> <button class="primary" onclick="exportFile()">Export updated HTML</button></div></header>
+<section class="panel"><div class="row"><div class="eyebrow">Release timeline</div><small id="today"></small></div><div class="tl" id="timeline"></div></section>
+<section class="panel sprintpanel" id="sprint"></section>
+<div id="goals"></div>
+<button onclick="addRelease()">+ Add release</button>
+<footer id="foot"></footer>
+</main>
+<dialog id="editor"><h2>Edit roadmap data</h2><p>Edit the sprint, dates, goals, metrics and tasks below. Task fields: <code>text</code>, <code>status</code> (open, in progress, done), <code>sprint</code> (true if it is in the current sprint), <code>assignee</code> (initials), <code>due</code> (YYYY-MM-DD), <code>dependency</code> (blocked or blocks) and <code>url</code> (ClickUp link). <code>vacations</code> lists red-day periods (<code>from</code>, <code>to</code>, <code>label</code>); they show in red on the timeline and don't count as working days.</p><textarea id="data"></textarea><p id="error" style="color:#ff9b9b"></p><div class="row"><button onclick="editor.close()">Cancel</button><button class="primary" onclick="saveEdit()">Save changes</button></div></dialog>
+<script id="seed" type="application/json">{"sprint":{"name":"Sprint 2","start":"2026-11-24","end":"2026-12-08","url":"https://app.clickup.com/9011040962/v/l/8chk4p2-28051","syncedAt":"2026-11-25"},"vacations":[{"from":"2026-12-12","to":"2027-01-10","label":"Vacation"}],"releases":[{"id":"r1","date":"2026-12-12","title":"Improve level retention","goal":"Achieve high player retention throughout the first 100 levels.","why":"Make sure players enjoy the core gameplay and remain engaged through a balanced difficulty curve, with daily reasons to come back.","metrics":[{"name":"Level 100 retention target","value":"TBD"},{"name":"Current level 100 retention","value":"Not measured"}],"tasks":[{"text":"Review and dissect first 50 levels","status":"open","sprint":true,"assignee":"JR","due":"2026-11-30","dependency":"blocks","url":"https://app.clickup.com/t/9011040962/1gaductq2kd"},{"text":"Review 50 level findings","status":"open","sprint":true,"due":"2026-12-01","dependency":"blocked","url":"https://app.clickup.com/t/9011040962/1gaductq7va"},{"text":"Implement approved level improvements","status":"open","sprint":true,"due":"2026-12-03","dependency":"blocked","url":"https://app.clickup.com/t/9011040962/1gaductq7vb"},{"text":"Implement level analytics tracking","status":"open","sprint":true,"due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2kb"},{"text":"Implement bosses within progression","status":"open","sprint":true,"assignee":"ZM","due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2kg"},{"text":"Finalize Gadget functionality and onboarding","status":"open","sprint":true,"assignee":"SN","due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2ke"},{"text":"Level creation","status":"open","sprint":true,"priority":"Normal","url":"https://app.clickup.com/t/9011040962/1gaductq2ky"},{"text":"Implement Daily Login","status":"open","sprint":true,"assignee":"SÅ","due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2kp"},{"text":"Daily Login UI and reward visuals","status":"in progress","sprint":true,"assignee":"ZM","due":"2026-11-27","url":"https://app.clickup.com/t/9011040962/1gaductq2kv"},{"text":"Implement Daily Spin","status":"open","sprint":true,"due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2km"},{"text":"Daily Spin UI and reward visuals","status":"open","sprint":true,"due":"2026-11-27","url":"https://app.clickup.com/t/9011040962/1gaductq2kt"},{"text":"Implement core Village functionality","status":"open","sprint":true,"assignee":"DM","due":"2026-12-04","dependency":"blocked","url":"https://app.clickup.com/t/9011040962/1gaductq2kk"},{"text":"Village art and supporting assets","status":"open","sprint":true,"assignee":"NW","due":"2026-11-27","dependency":"blocks","url":"https://app.clickup.com/t/9011040962/1gaductq2kr"},{"text":"Implement iOS support","status":"open","sprint":true,"due":"2026-11-30","url":"https://app.clickup.com/t/9011040962/1gaductq2kf"},{"text":"Remote config parameters","status":"open","sprint":true,"due":"2026-12-07","url":"https://app.clickup.com/t/9011040962/1gaductq2kw"},{"text":"Balance difficulty curve","status":"open","sprint":false},{"text":"Playtest updated levels","status":"open","sprint":false},{"text":"Prepare release build","status":"open","sprint":false}]},{"id":"r2","date":"2027-01-20","title":"Improve monetization","goal":"Achieve D1 ROAS of 30% or more.","why":"Improve early monetization and validate the economics of user acquisition.","metrics":[{"name":"D1 ROAS target","value":"≥ 30%"},{"name":"Current D1 ROAS","value":"Not measured"}],"tasks":[{"text":"Implement Mediator","status":"in progress","sprint":true,"due":"2026-12-02","url":"https://app.clickup.com/t/9011040962/1gaductq2kc"},{"text":"Implement revive improvements","status":"in progress","sprint":true,"assignee":"DM","due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2kj"},{"text":"Implement Star Track","status":"in progress","sprint":true,"assignee":"ZM","due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2kn"},{"text":"Star Track UI and reward assets","status":"in progress","sprint":true,"assignee":"NW","due":"2026-12-01","url":"https://app.clickup.com/t/9011040962/1gaductq2ku"},{"text":"Implement Gadget Shop","status":"open","sprint":true,"due":"2026-12-04","url":"https://app.clickup.com/t/9011040962/1gaductq2kh"},{"text":"Gadget visuals and Gadget Shop assets","status":"open","sprint":true,"assignee":"SN","due":"2026-11-27","url":"https://app.clickup.com/t/9011040962/1gaductq2kq"},{"text":"Analyze current monetization performance","status":"open","sprint":false},{"text":"Improve early-game offers","status":"open","sprint":false},{"text":"Test ad frequency and placement","status":"open","sprint":false},{"text":"Validate results through UA testing","status":"open","sprint":false}]}]}</script>
+<script>
+const $=id=>document.getElementById(id),editor=$('editor');
+let state=JSON.parse($('seed').textContent);
+const key='game-roadmap:v2:'+location.pathname;
+try{let saved=JSON.parse(localStorage.getItem(key)||'null');if(saved&&saved.syncedAt===state.sprint.syncedAt&&valid(saved.state)){if(!saved.state.vacations)saved.state.vacations=state.vacations;state=saved.state}}catch(e){}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=s=>new Date(s+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const fmtShort=s=>new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+function today(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+const days=s=>Math.round((Date.parse(s)-Date.parse(today()))/86400000);
+const countdown=d=>d===0?'Today':d>0?`${d} days left`:`${-d} days past`;
+const onVacation=t=>(state.vacations||[]).some(v=>v&&t>=Date.parse(v.from)&&t<=Date.parse(v.to));
+function workdays(s){let a=Date.parse(today()),b=Date.parse(s),n=0;for(let t=a+86400000;t<=b;t+=86400000){let w=new Date(t).getUTCDay();if(w>0&&w<6&&!onVacation(t))n++}return n}
+const wdText=s=>days(s)>0?`${workdays(s)} working days`:'';
+let ui={};const uiKey='game-roadmap:ui:'+location.pathname;try{ui=JSON.parse(localStorage.getItem(uiKey)||'{}')||{}}catch(e){}
+const foldBtn=id=>`<button class="fold" onclick="fold(this)" aria-expanded="${!ui[id]}">${ui[id]?'Show ▾':'Hide ▴'}</button>`;
+function fold(btn){let sec=btn.closest('section'),id=sec.dataset.fold;ui[id]=!ui[id];try{localStorage.setItem(uiKey,JSON.stringify(ui))}catch(e){}sec.classList.toggle('collapsed',ui[id]);btn.textContent=ui[id]?'Show ▾':'Hide ▴';btn.setAttribute('aria-expanded',!ui[id])}
+const isDone=t=>t.status==='done';
+function persist(){try{localStorage.setItem(key,JSON.stringify({syncedAt:state.sprint.syncedAt,state}))}catch(e){}}
+function safeUrl(s){try{let u=new URL(s);return ['https:','http:'].includes(u.protocol)?u.href:null}catch(e){return null}}
+function valid(s){return s&&s.sprint&&typeof s.sprint.name==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s.sprint.start)&&/^\d{4}-\d{2}-\d{2}$/.test(s.sprint.end)&&Array.isArray(s.releases)&&s.releases.every(r=>r&&typeof r.title==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&Number.isFinite(Date.parse(r.date))&&Array.isArray(r.metrics)&&r.metrics.every(m=>m&&typeof m.name==='string')&&Array.isArray(r.tasks)&&r.tasks.every(t=>t&&typeof t.text==='string'&&(!t.due||/^\d{4}-\d{2}-\d{2}$/.test(t.due))))}
+const statusRank={'in progress':0,'open':1,'done':2};
+const byWork=(a,b)=>(statusRank[a.t.status]??1)-(statusRank[b.t.status]??1)||(a.t.due||'9999').localeCompare(b.t.due||'9999');
+function dueTag(t){if(!t.due)return '<span class="due">No due date</span>';let d=days(t.due),c=isDone(t)?'':d<0?'late':d<=2?'soon':'';return `<span class="due ${c}">${d<0&&!isDone(t)?'Overdue · ':''}${esc(fmtShort(t.due))}</span>`}
+function statusPill(t){let s=t.status||'open';return `<span class="pill ${s==='done'?'st-done':s==='in progress'?'st-prog':'st-open'}">${esc(s)}</span>`}
+function taskRow(t,i,j){let url=safeUrl(t.url);return `<label class="task ${isDone(t)?'checked':''}"><input type="checkbox" ${isDone(t)?'checked':''} onchange="toggle(${i},${j},this)"><span class="name">${esc(t.text)}</span><span class="meta">${t.sprint?statusPill(t):'<span class="pill backlog">Not in a sprint</span>'}${t.dependency==='blocked'?'<span class="pill blocked">Blocked</span>':t.dependency==='blocks'?'<span class="pill blocks">Blocks others</span>':''}${t.sprint?dueTag(t):''}${t.sprint?`<span class="who ${t.assignee?'':'none'}" title="${t.assignee?esc(t.assignee):'Unassigned'}">${t.assignee?esc(t.assignee):'?'}</span>`:''}${url?`<a href="${esc(url)}" target="_blank" rel="noopener">ClickUp ↗</a>`:''}</span></label>`}
+function renderSprint(){let s=state.sprint,all=state.releases.flatMap(r=>r.tasks.filter(t=>t.sprint).map(t=>({t,r})));
+ let n=all.length,done=all.filter(x=>isDone(x.t)).length,prog=all.filter(x=>x.t.status==='in progress').length,open=n-done-prog;
+ let blocked=all.filter(x=>x.t.dependency==='blocked'&&!isDone(x.t)).length,unassigned=all.filter(x=>!x.t.assignee&&!isDone(x.t)).length,late=all.filter(x=>x.t.due&&days(x.t.due)<0&&!isDone(x.t)).length;
+ let left=days(s.end),total=Math.max(1,Math.round((Date.parse(s.end)-Date.parse(s.start))/86400000)),elapsed=Math.min(100,Math.max(0,Math.round((total-left)/total*100)));
+ let next=all.filter(x=>!isDone(x.t)&&x.t.due).sort(byWork).sort((a,b)=>a.t.due.localeCompare(b.t.due)).slice(0,6);
+ let url=safeUrl(s.url),pct=v=>n?v/n*100:0;
+ $('sprint').innerHTML=`<div class="row"><div><div class="tag">Current sprint · ${esc(fmt(s.start))} to ${esc(fmt(s.end))}</div><h2>${esc(s.name)}</h2></div><div class="right"><div class="count">${Math.max(0,left)} <small>${left<0?'sprint ended':'days left in sprint'}</small>${left>0?`<small class="wd">${workdays(s.end)} working days left</small>`:''}</div>${foldBtn('sprint')}</div></div>
+ <div class="body"><div class="metrics"><div class="metric"><small>Sprint tasks done</small><strong>${done} / ${n}</strong></div><div class="metric"><small>In progress</small><strong>${prog}</strong></div><div class="metric"><small>Blocked</small><strong>${blocked}</strong></div><div class="metric"><small>Unassigned</small><strong>${unassigned}</strong></div><div class="metric"><small>Overdue</small><strong>${late}</strong></div></div>
+ <div class="cols"><div><div class="eyebrow">Progress vs time</div><div class="bar stack"><div class="s-done" style="width:${pct(done)}%"></div><div class="s-prog" style="width:${pct(prog)}%"></div><div class="s-open" style="width:${pct(open)}%"></div></div>
+ <div class="legend"><span><i style="background:#79dfb4"></i>Done ${done}</span><span><i style="background:#78aaff"></i>In progress ${prog}</span><span><i style="background:#4a5870"></i>Open ${open}</span></div>
+ <div class="bar" style="margin-top:18px"><div style="width:${elapsed}%;background:#f2c66d"></div></div><small>${elapsed}% of the sprint has passed</small>
+ ${state.releases.map(r=>{let ts=r.tasks.filter(t=>t.sprint);return ts.length?`<p style="margin:14px 0 0"><strong style="color:#e9edf5">${ts.length}</strong> sprint tasks support <strong style="color:#e9edf5">${esc(r.title)}</strong></p>`:''}).join('')}</div>
+ <div><div class="eyebrow">Due next</div><ul class="upnext">${next.map(x=>`<li><span>${esc(x.t.text)}</span>${dueTag(x.t)}</li>`).join('')||'<li><span class="muted">Nothing due</span></li>'}</ul></div></div>
+ <footer style="margin-top:16px">Synced from ClickUp on ${esc(fmt(s.syncedAt||today()))}${url?` · <a href="${esc(url)}" target="_blank" rel="noopener">Open sprint in ClickUp ↗</a>`:''}</footer></div>`;
+ $('sprint').dataset.fold='sprint';$('sprint').classList.toggle('collapsed',!!ui.sprint)}
+function render(){let R=state.releases;R.sort((a,b)=>a.date.localeCompare(b.date));$('today').textContent=fmt(today());
+ let upcoming=R.findIndex(r=>days(r.date)>=0);
+ let pts=[{date:today(),cls:'',label:'Today'},{date:state.sprint.end,cls:'sprint',label:state.sprint.name+' ends'},...R.map(r=>({date:r.date,cls:'release',label:r.title}))].sort((a,b)=>a.date.localeCompare(b.date));
+ let t0=Date.parse(pts[0].date),t1=Date.parse(pts[pts.length-1].date),span=Math.max(1,t1-t0),pos=s=>(Date.parse(s)-t0)/span*100;
+ let ticks=[];for(let d=new Date(t0);;){d=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1));if(d.getTime()>=t1)break;let iso=d.toISOString().slice(0,10);ticks.push(`<div class="tick" style="left:${pos(iso)}%"><span>${d.toLocaleDateString('en-GB',{month:'short',timeZone:'UTC'})}${d.getUTCMonth()===0?' '+d.getUTCFullYear():''}</span></div>`)}
+ let clamp=x=>Math.min(100,Math.max(0,x)),vac=(state.vacations||[]).filter(v=>v&&v.from&&v.to&&Date.parse(v.to)>=t0&&Date.parse(v.from)<=t1).map(v=>{let a=clamp(pos(v.from)),b=clamp(pos(v.to)+86400000/span*100);return `<div class="vac" style="left:${a}%;width:${b-a}%" title="${esc(v.label||'Vacation')}: ${esc(fmt(v.from))} to ${esc(fmt(v.to))}"><span>${esc(v.label||'Vacation')}</span></div>`});
+ $('timeline').innerHTML='<div class="axis"><div class="line"></div>'+vac.join('')+ticks.join('')+pts.map(p=>{let x=pos(p.date);return `<div class="pt ${p.cls} ${x<12?'edge-l':x>88?'edge-r':''}" style="left:${x}%"><div class="dot"></div><div class="lab">${p.label==='Today'?`<div class="date">Today</div><small>${esc(fmt(p.date))}</small>`:`<div class="date">${esc(fmt(p.date))}</div><small>${esc(p.label)}</small><small>${countdown(days(p.date))}</small>${wdText(p.date)?`<small class="wd">${wdText(p.date)}</small>`:''}`}</div></div>`}).join('')+'</div>';
+ layoutTimeline();
+ renderSprint();
+ $('goals').innerHTML=R.map((r,i)=>{let n=r.tasks.filter(isDone).length,p=r.tasks.length?Math.round(n/r.tasks.length*100):0,d=days(r.date);
+  let rows=r.tasks.map((t,j)=>({t,j})),inS=rows.filter(x=>x.t.sprint).sort(byWork),out=rows.filter(x=>!x.t.sprint);
+  let fid='release:'+(r.id||r.title);
+  return `<section class="panel goal ${i===upcoming?'':'future'} ${ui[fid]?'collapsed':''}" data-fold="${esc(fid)}"><div class="row"><div><div class="tag">${i===upcoming?'Next release':d<0?'Past milestone':'Upcoming milestone'} · ${esc(fmt(r.date))}</div><h2>${esc(r.title)}</h2></div><div class="right"><div class="count">${Math.abs(d)} <small>${d<0?'days past':d===0?'days · today':'days left'}</small>${d>0?`<small class="wd">${workdays(r.date)} working days left</small>`:''}</div>${foldBtn(fid)}</div></div>
+  <div class="body"><div class="eyebrow">Primary goal</div><h2 style="font-size:20px">${esc(r.goal)}</h2><p>${esc(r.why)}</p>
+  <div class="eyebrow">Success criteria</div><div class="metrics">${r.metrics.map(m=>`<div class="metric"><small>${esc(m.name)}</small><strong>${esc(m.value)}</strong></div>`).join('')}</div>
+  <details open><summary>Tasks supporting this goal · ${n}/${r.tasks.length} completed</summary><div class="bar"><div style="width:${p}%"></div></div>
+  ${inS.length?`<h3>In ${esc(state.sprint.name)} (${inS.length})</h3>`+inS.map(x=>taskRow(x.t,i,x.j)).join(''):''}
+  ${out.length?`<h3>Not scheduled in a sprint yet (${out.length})</h3>`+out.map(x=>taskRow(x.t,i,x.j)).join(''):''}</details></div></section>`}).join('');
+ $('foot').innerHTML=`Standalone roadmap · Sprint data is a snapshot of ClickUp from ${esc(fmt(state.sprint.syncedAt||today()))}; ticking a box here does not update ClickUp. Changes are saved in this browser when local storage is available. Export an updated HTML to share your changes.`}
+function layoutTimeline(){let tl=$('timeline'),labs=[...tl.querySelectorAll('.lab')];if(!labs.length)return;
+ labs.forEach(l=>{l.style.top='';l.style.bottom=''});
+ let h=Math.max(...labs.map(l=>l.offsetHeight))+12,gap=22;
+ let lanes=[['down',0],['up',0],['down',1],['up',1],['down',2],['up',2]].map(([side,lvl])=>({side,lvl,end:-Infinity,used:false}));
+ labs.forEach(l=>{let r=l.getBoundingClientRect(),lane=lanes.find(x=>r.left>x.end+12)||lanes[lanes.length-1];lane.end=Math.max(lane.end,r.right);lane.used=true;let off=gap+lane.lvl*h;if(lane.side==='up'){l.style.top='auto';l.style.bottom=off+'px'}else l.style.top=off+'px'});
+ let depth=side=>{let u=lanes.filter(x=>x.used&&x.side===side);return u.length?gap+(Math.max(...u.map(x=>x.lvl))+1)*h:16};
+ let up=depth('up'),down=depth('down');tl.querySelector('.axis').style.top=up+'px';tl.style.height=(up+down)+'px'}
+addEventListener('resize',()=>layoutTimeline());
+function toggle(i,j,el){let t=state.releases[i].tasks[j];if(el.checked){t.prevStatus=t.status;t.status='done'}else{t.status=t.prevStatus&&t.prevStatus!=='done'?t.prevStatus:'open';delete t.prevStatus}persist();let open=[...document.querySelectorAll('#goals details')].map(d=>d.open);render();document.querySelectorAll('#goals details').forEach((d,k)=>d.open=open[k])}
+function edit(){$('data').value=JSON.stringify(state,null,2);$('error').textContent='';editor.showModal()}
+function saveEdit(){try{let a=JSON.parse($('data').value);if(!valid(a))throw Error('Needs a sprint (name, start, end) and releases, each with a title, valid date, metrics and tasks.');state=a;persist();render();editor.close()}catch(e){$('error').textContent=e.message}}
+function addRelease(){edit();let a=JSON.parse($('data').value);a.releases.push({id:'r'+Date.now(),date:today(),title:'New release',goal:'Define the desired outcome',why:'Why this matters',metrics:[{name:'Target',value:'TBD'}],tasks:[{text:'New task',status:'open',sprint:false}]});$('data').value=JSON.stringify(a,null,2)}
+function exportFile(){let clone=document.documentElement.cloneNode(true);clone.querySelector('#seed').textContent=JSON.stringify(state).replace(/</g,'\\u003c');clone.querySelector('#editor').removeAttribute('open');['goals','timeline','sprint','foot'].forEach(id=>clone.querySelector('#'+id).innerHTML='');let blob=new Blob(['<!doctype html>\n'+clone.outerHTML],{type:'text/html'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='GameRoadmap-'+today()+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+render();setInterval(()=>{if($('today').textContent!==fmt(today()))render()},60000);
+</script></body></html>

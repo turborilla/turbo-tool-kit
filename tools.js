@@ -40,4 +40,12 @@ window.TOOLS = [
     icon: "\u{1FA9F}",
     author: "Zacharie",
   },
+  {
+    name: "Game Roadmap",
+    file: "game-roadmap.html",
+    description: "Mania release goals and the current ClickUp sprint on one page, with a to-scale timeline, working days left and vacation days.",
+    tags: ["planning", "production"],
+    icon: "\u{1F5FA}",
+    author: "Elias",
+  },
 ];
